@@ -27,7 +27,7 @@ const reviewSchema = new Schema<IReview>({
   username: { type: String, required: true },
   comment: { type: String, required: true },
   rating: { type: Number, required: true, min: 0, max: 5 },
-});
+}); 
 
 // Create Product Schema
 const productSchema = new Schema<IProduct>({

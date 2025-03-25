@@ -1,11 +1,8 @@
 import { Response, Request, RequestHandler } from 'express';
 import ProductModel from '../Models/products.model.js';
 import CartModel from '../Models/cartItem.model.js';
+import { AuthenticatedRequest } from './../Types/types.js';
 
-
-interface AuthenticatedRequest extends Request {
-    user?: any; // Define user property to avoid TypeScript error
-}
 
 const addToCart:RequestHandler = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -61,8 +58,6 @@ const addToCart:RequestHandler = async (req: Request, res: Response): Promise<vo
             product.availableStocks -= cartItems.quantity
             await product.save()
         
-
-
          res.status(200).json({message:"Item added to cart Successfully", ok:true, })
          return;
     }
@@ -146,9 +141,31 @@ const filterProducts = async (req: Request, res: Response) => {
     }
 }
 
+const getCartItems: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const authReq = req as AuthenticatedRequest;
+        if (!authReq.user) {
+            res.status(401).json({ message: "Unauthorized: User not found", error: true });
+            return;
+        }
+        const userId = authReq.user._id;
+        const cart = await CartModel.findOne({ userId }).populate("items.productId"); // Populates product details if needed
+
+        if (!cart) {
+            res.status(200).json({ message: "Cart is empty", items: [] });
+            return;
+        }
+        res.status(200).json({ message: "Cart items retrieved successfully", items: cart.items });
+    } catch (error) {
+        console.error("Error retrieving cart items:", error);
+        res.status(500).json({ message: "Internal Server Error", error: true });
+    }
+};
+
 
 export {
     searchProducts,
     addToCart,
-    filterProducts
+    filterProducts,
+    getCartItems
 }
