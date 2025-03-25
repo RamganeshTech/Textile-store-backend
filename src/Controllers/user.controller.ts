@@ -1,212 +1,154 @@
-import express , {Response, Request} from "express";
-import bcrypt from "bcrypt";
-import jwt, { VerifyErrors } from "jsonwebtoken";
-import { UserModel } from "../Models/user.model.js";
+import { Response, Request, RequestHandler } from 'express';
+import ProductModel from '../Models/products.model.js';
+import CartModel from '../Models/cartItem.model.js';
 
-// import admin from "../Config/firebaseAdmin.js";
 
-interface AuthenticationRequest extends Request{
-    cookies: {userAccessToken?:string}
+interface AuthenticatedRequest extends Request {
+    user?: any; // Define user property to avoid TypeScript error
 }
 
-interface RefreshTokenPayload {
-  userId: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
+const addToCart:RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
 
+        let user= (req as AuthenticatedRequest).user;
 
-const loginUser = async (req:AuthenticationRequest, res:Response)=>{
-    try{
-        let isTokenExists = req.cookies?.userAccessToken
+        let cartItems = req.body.cartItems
 
-        if(isTokenExists){
-            return res.status(403).json({ error: true, message: "Already logged in", ok: false });
+        if (!cartItems.productId || !cartItems.quantity || cartItems.quantity < 0) {
+             res.status(400).json({ message: "Invalid product ID or quantity", error: true })
+             return;
         }
 
+
+        let product = await ProductModel.findById(cartItems.productId)
+
+        if (!product) {
+             res.status(404).json({ message: "Product not found", error: true });
+             return;
+        }
+
+        if ((product?.availableStocks || 0) < cartItems.quantity) {
+             res.status(400).json({ message: "Not Available stocks", error: true })
+             return;
+        }
+
+        let userCartExists = await CartModel.findOne({ userId: user._id })
+
+        // if(!userExists)  res.status(404).json({ message: "User Not Available ", error: true })
+
+        if (!userCartExists) {
+            userCartExists = await CartModel.create({
+                userId: user._id,
+                items: [{ productId: cartItems.productId, quantity: cartItems.quantity, price: cartItems.price }]
+            })
+        }
+        else {
+            let itemExists = userCartExists.items.find(item => item.productId.toString() === cartItems.productId.toString())
+
+            if (itemExists) {
+                if (product.availableStocks < itemExists.quantity + cartItems.quantity) {
+                     res.status(400).json({ message: "Exceeds available stock", error: true })
+                     return;
+                }
+                itemExists.quantity += cartItems.quantity
+
+            } else {
+                userCartExists.items.push({ productId: cartItems.productId, quantity: cartItems.quantity, price: cartItems.price })
+            }
+        }
+
+        await userCartExists.save()
+            product.availableStocks -= cartItems.quantity
+            await product.save()
         
-    // Extract email and password from the request body
-    const { email, password } = req.body;
 
-    // Check if both email and password are provided
-    if (!email || !password) {
-      return void res.status(400).json({
-        error: true,
-        message: "Email and password are required",
-        ok: false,
-      });
+
+         res.status(200).json({message:"Item added to cart Successfully", ok:true, })
+         return;
     }
-
-    // Simulate credential verification (replace with real logic)
-    if (email === "test@example.com" && password === "password123") {
-      // Simulate token generation (replace with a real token, e.g., JWT)
-      const accessToken = "dummyaccesstoken123";
-
-      // Set cookie with the token (httpOnly for security)
-      res.cookie("userAccessToken", accessToken, { httpOnly: true });
-
-      return void res.status(200).json({
-        error: false,
-        message: "Login successful",
-        ok: true,
-      });
-    } else {
-      return void res.status(401).json({
-        error: true,
-        message: "Invalid credentials",
-        ok: false,
-      });
-    }
-
-    }
-    catch(error){
-        const err = error as Error;
-        console.error(err.message);
-        return void res.status(500).json({
-          error: true,
-          message: "Internal Server Error",
-          ok: false,
-        });
+    catch (error) {
+        if(error instanceof Error){
+            console.log("error from addToCart", error.message)
+            res.status(400).json({ message: error.message, error: true, ok: false })
+            return;
+        }
     }
 }
 
-const registerUser = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { userName, email, password, address, pincode, state, phoneNumber } = req.body;
-  
-      // Validate required fields
-      if (!userName || !email || !password) {
-        res.status(400).json({ error: true, message: "All fields are required" });
-        return;
-      }
-  
-      // Check if the email already exists
-      const existingUser = await UserModel.findOne({ email });
-      if (existingUser) {
-        res.status(409).json({ error: true, message: "Email already exists" });
-        return;
-      }
-  
-      // Hash the password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-      // Create user using create() method
-      const newUser = await UserModel.create({
-        userName,
-        email,
-        password: hashedPassword,
-        address: address ? address : null,
-        pincode: pincode ? pincode : null,
-        state: state ? state : null,
-        phoneNumber: phoneNumber ? phoneNumber : null
-      });
-  
-      // Generate a JWT token for the new user
-      const tokenPayload = { id: newUser._id, email: newUser.email };
-      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET as string, { expiresIn: '1h' });
-  
-      // Return success response with the token and minimal user info
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        token,
-        user: {
-          id: newUser._id,
-          userName: newUser.userName,
-          email: newUser.email
-        }
-      });
-    } catch (error) {
-      console.error("Error in registerUser:", error);
-      res.status(500).json({ error: true, message: "Internal server error" });
-    }
-  };
 
-  // const googleLogin = async (req: Request, res: Response) => {
-  //   try {
-  //     const { idToken } = req.body;
-  //     if (!idToken) {
-  //       return res.status(400).json({ error: "ID token is required" });
-  //     }
-  
-  //     // Verify ID token with Firebase
-  //     const decodedToken = await admin.auth().verifyIdToken(idToken);
-  //     const { email, name, uid } = decodedToken;
-  
-  //     if (!email) {
-  //       return res.status(400).json({ error: "No email found in Google account" });
-  //     }
-  
-  //     // Check if user already exists in DB
-  //     let user = await UserModel.findOne({ email });
-  
-  //     if (!user) {
-  //       // Create a new user if not found
-  //       user = await UserModel.create({
-  //         userName: name,
-  //         email,
-  //         password: null, // No password since it's Google Auth
-  //         address: null,
-  //         pincode: null,
-  //         state: null,
-  //         phoneNumber: null,
-  //       });
-  //     }
-  
-  //     // Generate a JWT token for the session
-  //     const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET as string, {
-  //       expiresIn: "1h",
-  //     });
-  
-  //     res.status(200).json({ success: true, message: "Google login successful", token, user });
-  //   } catch (error) {
-  //     console.error("Google login error:", error);
-  //     res.status(500).json({ error: "Internal server error" });
-  //   }
-  // };
+const searchProducts = async (req: Request, res: Response) => {
 
-  const refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      // Get refresh token from request body (or you can also extract from cookies or headers)
-      const { refreshToken } = req.body;
-      if (!refreshToken) {
-        res.status(400).json({ error: true, message: "Refresh token is required" });
-        return;
-      }
-  
-      // Verify the refresh token using JWT_REFRESH_SECRET
-      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string, (err: VerifyErrors | null, decoded: unknown) => {
-        if (err instanceof Error) {
-          return res.status(401).json({ error: true, message: "Invalid refresh token" });
+        if (!req.query.search) {
+            return res.status(400).json({ message: "Search Box is Empty", error: true, ok: false })
         }
-        // decoded should contain the payload we signed (e.g. userId and email)
-        const payload = decoded as RefreshTokenPayload;
-        // Optionally, you might want to check if the refresh token is in a database of valid tokens
-  
-        // Generate a new access token using JWT_SECRET
-        const newAccessToken = jwt.sign(
-          { userId: payload.userId, email: payload.email },
-          process.env.JWT_SECRET as string,
-          { expiresIn: "1h" } // Adjust the expiry as needed
-        );
-  
-        return res.status(200).json({
-          success: true,
-          accessToken: newAccessToken,
-        });
-      });
-    } catch (error) {
-      console.error("Refresh token error:", error);
-      res.status(500).json({ error: true, message: "Internal server error" });
+
+        let productName = req.query.search as string;
+
+        let filter = req.query.filter as string | undefined;
+
+        let productRegex = new RegExp(productName, "i")
+
+        let product: Record<string, any> = { productName: { $regex: productRegex } };
+
+        if (filter) {
+            let parsedFilter = JSON.parse(filter)
+
+            if (parsedFilter && Object.keys(parsedFilter).length) {
+
+                if (parsedFilter.category && Array.isArray(parsedFilter.category)) {
+                    product.category = { $in: parsedFilter.category }
+                }
+
+                if (parsedFilter.Min || parsedFilter.Max) {
+                    if (parsedFilter.Max) product.Min.$gte = parsedFilter.Max
+                    if (parsedFilter.Min) product.Min.$gte = parsedFilter.Min
+                }
+
+                if (parsedFilter.availability.length) {
+                    product.availability = { $in: parsedFilter.availability }
+                }
+
+                if (parsedFilter.sizes.length) {
+                    product.sizes = { $in: parsedFilter.sizes }
+                }
+
+                if (parsedFilter.colors.length) {
+                    product.colors = { $in: parsedFilter.colors }
+                }
+
+            }
+        }
+
+        let data = await ProductModel.find(product)
+
+        if (!data.length) {
+            return res.status(402).json({ message: "No Proudcts Available", error: true, ok: false })
+        }
+
+        return res.status(200).json({ message: "Products Fetched successfully", error: true, ok: false })
+
     }
-  };
+    catch (error) {
+        console.log("error from addToCart", addToCart)
+        res.status(400).json({ message: "", error: true, ok: false })
+    }
+}
+
+
+const filterProducts = async (req: Request, res: Response) => {
+    try {
+
+    }
+    catch (error) {
+        console.log("error from addToCart", addToCart)
+        res.status(400).json({ message: "", error: true, ok: false })
+    }
+}
 
 
 export {
-    loginUser,
-    registerUser,
-    // googleLogin,
-    refreshToken
-} 
+    searchProducts,
+    addToCart,
+    filterProducts
+}

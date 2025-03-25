@@ -8,6 +8,8 @@ export interface IUser extends Document {
   pincode?: string | null;
   state?: string | null;
   phoneNumber?: string | null;
+  resetPasswordToken?: string;  // Store the reset token here
+  resetPasswordExpire?: number; // Store the expiration time here
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -18,7 +20,9 @@ const UserSchema: Schema<IUser> = new Schema(
     address: { type: String, default: null },
     pincode: { type: String, default: null },
     state: { type: String, default: null },
-    phoneNumber: { type: String, default: null }
+    phoneNumber: { type: String, default: null },
+    resetPasswordToken: { type: String },  // Token for password reset
+    resetPasswordExpire: { type: Number },  // Expiration time for the reset token
   },
   {
     timestamps: true ,

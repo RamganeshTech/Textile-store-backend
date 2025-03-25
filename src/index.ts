@@ -4,13 +4,13 @@ import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import connectDB from './Config/ConnectDB.js';
 
-import userRoute from './Routes/user.route.js'
+import userRoute from './Routes/userauth.route.js'
+dotenv.config()
 
 const app = express()
 app.use(cors())
 app.use(cookieParser())
 app.use(express.json())
-dotenv.config()
 
 
 
@@ -22,5 +22,5 @@ connectDB().then(()=>{
   })
 })
 .catch((error:Error)=>{
-    console.log(error.message)
+    console.log("error in promise of DB connection",error.message)
 })
