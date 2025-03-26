@@ -1,0 +1,14 @@
+import express, { RequestHandler }  from "express";
+import { addToCart, filterProducts, getCartItems, removeCartItem, searchProducts } from "../Controllers/usercart.controller.js";
+import { authMiddleware } from "../Middleware/authMiddleware.js";
+
+const route = express.Router()
+
+route.get('/searchproducts',authMiddleware, searchProducts as RequestHandler)
+route.post('/cart/addtocart', authMiddleware ,addToCart)
+route.post('/cart/filterproducts',authMiddleware, filterProducts as RequestHandler)
+route.get('/cart/getcartitems', authMiddleware, getCartItems as RequestHandler)
+route.delete('/cart/deletecartitem/:id', authMiddleware, removeCartItem as RequestHandler)
+
+export default route;
+

@@ -34,6 +34,8 @@ interface Items {
     productId: mongoose.Schema.Types.ObjectId,
             quantity: number,
             price:number,
+    _id?: mongoose.Schema.Types.ObjectId,
+
 }
 
 interface ICart extends Document{

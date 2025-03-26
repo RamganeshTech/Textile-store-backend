@@ -1,32 +1,32 @@
 import { Response, Request, RequestHandler } from 'express';
 import ProductModel from '../Models/products.model.js';
 import CartModel from '../Models/cartItem.model.js';
-import { AuthenticatedRequest } from './../Types/types.js';
+import { AuthenticatedRequest } from '../Types/types.js';
 
 
-const addToCart:RequestHandler = async (req: Request, res: Response): Promise<void> => {
+const addToCart: RequestHandler = async (req: Request, res: Response): Promise<void> => {
     try {
 
-        let user= (req as AuthenticatedRequest).user;
+        let user = (req as AuthenticatedRequest).user;
 
         let cartItems = req.body.cartItems
 
         if (!cartItems.productId || !cartItems.quantity || cartItems.quantity < 0) {
-             res.status(400).json({ message: "Invalid product ID or quantity", error: true })
-             return;
+            res.status(400).json({ message: "Invalid product ID or quantity", error: true })
+            return;
         }
 
 
         let product = await ProductModel.findById(cartItems.productId)
 
         if (!product) {
-             res.status(404).json({ message: "Product not found", error: true });
-             return;
+            res.status(404).json({ message: "Product not found", error: true });
+            return;
         }
 
         if ((product?.availableStocks || 0) < cartItems.quantity) {
-             res.status(400).json({ message: "Not Available stocks", error: true })
-             return;
+            res.status(400).json({ message: "Not Available stocks", error: true })
+            return;
         }
 
         let userCartExists = await CartModel.findOne({ userId: user._id })
@@ -44,8 +44,8 @@ const addToCart:RequestHandler = async (req: Request, res: Response): Promise<vo
 
             if (itemExists) {
                 if (product.availableStocks < itemExists.quantity + cartItems.quantity) {
-                     res.status(400).json({ message: "Exceeds available stock", error: true })
-                     return;
+                    res.status(400).json({ message: "Exceeds available stock", error: true })
+                    return;
                 }
                 itemExists.quantity += cartItems.quantity
 
@@ -55,15 +55,15 @@ const addToCart:RequestHandler = async (req: Request, res: Response): Promise<vo
         }
 
         await userCartExists.save()
-            product.availableStocks -= cartItems.quantity
-            await product.save()
-        
-         res.status(200).json({message:"Item added to cart Successfully", ok:true, })
-         return;
+        product.availableStocks -= cartItems.quantity
+        await product.save()
+
+        res.status(200).json({ message: "Item added to cart Successfully", data:userCartExists ,ok: true, })
+        return;
     }
     catch (error) {
-        if(error instanceof Error){
-            console.log("error from addToCart", error.message)
+        if (error instanceof Error) {
+            console.log("error from addToCart", error)
             res.status(400).json({ message: error.message, error: true, ok: false })
             return;
         }
@@ -163,9 +163,66 @@ const getCartItems: RequestHandler = async (req: Request, res: Response): Promis
 };
 
 
+const removeCartItem = async (req: Request, res: Response) => {
+    try {
+        const user = (req as AuthenticatedRequest).user
+
+        let productId = req.params.id
+
+        if (!productId) {
+            res.status(400).json({ message: "Please the product to provide productId", error: true, ok: false })
+            return;
+        }
+
+        let product = await ProductModel.findById(productId)
+
+        if (!product) {
+            res.status(404).json({ message: "Product not found", error: true, ok: false });
+            return;
+        }
+
+        let userCart = await CartModel.findOne({ userId: user._id })
+
+        if (!userCart) {
+            res.status(404).json({ message: "UserCart not found", error: true, ok: false });
+            return;
+        }
+
+        let isMatching = userCart.items.find(item => item.productId.toString() === productId)
+
+        if (!isMatching) {
+            res.status(404).json({ message: "Product not found in cart", error: true, ok: false });
+            return;
+        }
+
+        // let data = await CartModel.findByIdAndDelete(isMatching.productId, { returnDocument: "after" })
+
+        // res.status(200).json({ message: "Product deleted from cart successfully", data,  error: false, ok: true });
+        // return;
+        
+        
+        userCart.items = userCart.items.filter(item => item._id?.toString() !== isMatching._id?.toString())
+                await userCart.save()
+        
+                res.status(200).json({ message: "Product removed from favourites", data: userCart, error: false, ok: true });
+                return;
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            console.log("error from addToCart", error.message)
+            res.status(400).json({ message: error.message, error: true, ok: false })
+            return;
+        }
+    }
+
+
+}
+
+
 export {
     searchProducts,
     addToCart,
     filterProducts,
-    getCartItems
+    getCartItems,
+    removeCartItem
 }
