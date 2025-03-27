@@ -46,7 +46,7 @@ const loginUser = async (req:AuthenticationRequest, res:Response)=>{
 
     if(!user){
       return res.status(404).json({  error: true,
-        message: "invalid email",
+        message: "invalid credentials",
         ok: false,})
     }
 
@@ -54,7 +54,7 @@ const loginUser = async (req:AuthenticationRequest, res:Response)=>{
 
     if (!isMatch) {
       return res.status(400).json({  error: true,
-        message: "invalid passwrod",
+        message: "invalid credentials",
         ok: false,});
     }
 
@@ -68,12 +68,13 @@ const loginUser = async (req:AuthenticationRequest, res:Response)=>{
       
       res.cookie("userrefreshtoken", refreshtoken, {httpOnly:true, maxAge:1000 * 60 * 60 * 24 * 7})
 
-      res.cookie("useraccesstoken", accessToken, { httpOnly: false });
+      res.cookie("useraccesstoken", accessToken, { httpOnly: true, maxAge:1000 * 60 * 60});
 
       return void res.status(200).json({
         error: false,
         message: "Login successful",
         ok: true,
+        data:{email, password}
       });
     } else {
       return void res.status(401).json({
@@ -133,7 +134,7 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
       const accesstoken = jwt.sign(tokenPayload, process.env.JWT_SECRET as string, { expiresIn: '1h' });
       const refreshtoken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
 
-      res.cookie("useraccesstoken", accesstoken, {httpOnly:true, maxAge:1000 * 60 * 1 })
+      res.cookie("useraccesstoken", accesstoken, {httpOnly:true, maxAge:1000 * 60 * 5})
       res.cookie("userrefreshtoken", refreshtoken, {httpOnly:true, maxAge:1000 * 60 * 60 * 24 * 7})
   
       // Return success response with the token and minimal user info
@@ -144,7 +145,8 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
         user: {
           _id: newUser._id,
           userName: newUser.userName,
-          email: newUser.email
+          email: newUser.email,
+          password:newUser.password
         }
       });
     } catch (error) {

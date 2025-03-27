@@ -11,6 +11,7 @@ const addToCart: RequestHandler = async (req: Request, res: Response): Promise<v
 
         let cartItems = req.body.cartItems
 
+        console.log(cartItems)
         if (!cartItems.productId || !cartItems.quantity || cartItems.quantity < 0) {
             res.status(400).json({ message: "Invalid product ID or quantity", error: true })
             return;
@@ -55,10 +56,10 @@ const addToCart: RequestHandler = async (req: Request, res: Response): Promise<v
         }
 
         await userCartExists.save()
-        product.availableStocks -= cartItems.quantity
-        await product.save()
+        // product.availableStocks -= cartItems.quantity
+        // await product.save()
 
-        res.status(200).json({ message: "Item added to cart Successfully", data:userCartExists ,ok: true, })
+        res.status(200).json({ message: "Item added to cart Successfully", data: userCartExists, ok: true, })
         return;
     }
     catch (error) {
@@ -152,15 +153,62 @@ const getCartItems: RequestHandler = async (req: Request, res: Response): Promis
         const cart = await CartModel.findOne({ userId }).populate("items.productId"); // Populates product details if needed
 
         if (!cart) {
-            res.status(200).json({ message: "Cart is empty", items: [] });
+            res.status(200).json({ message: "Cart is empty", data: [] });
             return;
         }
-        res.status(200).json({ message: "Cart items retrieved successfully", items: cart.items });
+        res.status(200).json({ message: "Cart items retrieved successfully", data: cart.items });
     } catch (error) {
         console.error("Error retrieving cart items:", error);
         res.status(500).json({ message: "Internal Server Error", error: true });
     }
 };
+
+
+const removeQuantity = async (req: Request, res: Response) => {
+    try {
+        let user = (req as AuthenticatedRequest).user
+        let productId = req.params.id
+
+        let { quantity } = req.body
+
+        if (!productId) {
+            res.status(400).json({ message: "Please the product to provide productId", error: true, ok: false })
+            return;
+        }
+
+        let product = await ProductModel.findById(productId)
+
+        if (!product) {
+            res.status(404).json({ message: "Product not found", error: true, ok: false });
+            return;
+        }
+
+        let userCart = await CartModel.findOne({ userId: user._id })
+
+        if (!userCart) {
+            res.status(404).json({ message: "UserCart not found", error: true, ok: false });
+            return;
+        }
+
+        let cartItem = userCart.items.find(item => item.productId.toString() === productId);
+
+        if (!cartItem) {
+            res.status(404).json({ message: "Product not found in cart", error: true, ok: false });
+            return;
+        }
+
+        cartItem.quantity = Math.max(cartItem.quantity - quantity, 0);
+        await userCart.save()
+
+        res.status(200).json({ message: "Product quantity reduced", data: userCart, error: false, ok: true });
+        return;
+
+    }
+    catch (error) {
+        console.error("Error retrieving cart items:", error);
+        res.status(500).json({ message: "Internal Server Error", error: true });
+    }
+}
 
 
 const removeCartItem = async (req: Request, res: Response) => {
@@ -188,6 +236,8 @@ const removeCartItem = async (req: Request, res: Response) => {
             return;
         }
 
+
+
         let isMatching = userCart.items.find(item => item.productId.toString() === productId)
 
         if (!isMatching) {
@@ -199,13 +249,13 @@ const removeCartItem = async (req: Request, res: Response) => {
 
         // res.status(200).json({ message: "Product deleted from cart successfully", data,  error: false, ok: true });
         // return;
-        
-        
-        userCart.items = userCart.items.filter(item => item._id?.toString() !== isMatching._id?.toString())
-                await userCart.save()
-        
-                res.status(200).json({ message: "Product removed from favourites", data: userCart, error: false, ok: true });
-                return;
+
+
+        userCart.items = userCart.items.filter(item => item.productId.toString() !== isMatching.productId.toString())
+        await userCart.save()
+
+        res.status(200).json({ message: "Product removed from cart", data: userCart, error: false, ok: true });
+        return;
     }
     catch (error) {
         if (error instanceof Error) {
@@ -224,5 +274,6 @@ export {
     addToCart,
     filterProducts,
     getCartItems,
-    removeCartItem
+    removeCartItem,
+    removeQuantity
 }
