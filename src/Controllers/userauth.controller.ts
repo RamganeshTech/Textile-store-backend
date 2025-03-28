@@ -308,10 +308,37 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
   };
 
 
+  const logout = async (req:Request,res:Response)=>{
+    try{
+      res.clearCookie("useraccesstoken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Only secure in production
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/", // Clear the cookie for the entire domain
+    });
+
+    res.clearCookie("userrefreshtoken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Only secure in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/", // Clear the cookie for the entire domain
+  });
+
+
+  res.json({ message: "Logout successful", ok: true });
+  
+    }
+    catch(error){
+      console.log(error)
+    }
+  }
+
+
 export {
     loginUser,
     registerUser,
     // googleLogin,
     refreshToken,       
-    forgotPassword
+    forgotPassword,
+    logout
 } 
