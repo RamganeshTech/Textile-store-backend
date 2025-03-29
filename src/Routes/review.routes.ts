@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.post('/review/addreview', authMiddleware, createReview);
 router.patch('/review/editreview/:reviewid', authMiddleware, editReview);
-router.get('/review/getallreviews', authMiddleware, getAllReview);
+router.get('/review/getallreviews/:productId', authMiddleware, getAllReview);
 router.delete('/review/removereview/:reviewid', authMiddleware, removeReview);
 
 export default router;

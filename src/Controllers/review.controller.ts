@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 const createReview = async (req: Request, res: Response) => {
     try {
 
-        let { productId, stars, description } = req.body;
+        let { productId, star:stars, description } = req.body;
 
         let product = await ProductModel.findById(productId)
 
@@ -146,7 +146,7 @@ const removeReview = async (req: Request, res: Response) => {
         }
 
         let { reviewid } = req.params
-        let { productId } = req.body
+        let { productId } =  req.query;
 
         if (!productId) {
             res.status(404).json({ message: "please provide the productId", error: true });
@@ -191,7 +191,7 @@ const removeReview = async (req: Request, res: Response) => {
 
 const getAllReview = async (req: Request, res: Response) => {
     try {
-        let { productId } = req.body;
+        let { productId } = req.params;
 
         let product = await ProductModel.findById(productId)
 

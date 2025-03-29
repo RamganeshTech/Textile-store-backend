@@ -74,7 +74,7 @@ const loginUser = async (req:AuthenticationRequest, res:Response)=>{
         error: false,
         message: "Login successful",
         ok: true,
-        data:{email, password}
+        user:{userId: user._id, userName:user.userName, email, password}
       });
     } else {
       return void res.status(401).json({
