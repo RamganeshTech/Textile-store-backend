@@ -43,7 +43,9 @@ const productSchema = new Schema<IProduct>({
   reviews: { type: [reviewSchema], default: [] },
   reviewStar: { type: Number, default: 0 },
   category: { type: [String], default: [] }, // ✅ Ensure category is always an array
-});
+},
+{ timestamps: true }
+);
 
 // Create Product Model
 const ProductModel = mongoose.model<IProduct>("ProductModel", productSchema);

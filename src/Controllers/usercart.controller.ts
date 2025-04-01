@@ -33,6 +33,7 @@ const addToCart: RequestHandler = async (req: Request, res: Response): Promise<v
         let userCartExists = await CartModel.findOne({ userId: user._id })
 
         // if(!userExists)  res.status(404).json({ message: "User Not Available ", error: true })
+        console.log(user)
 
         if (!userCartExists) {
             userCartExists = await CartModel.create({
@@ -73,61 +74,131 @@ const addToCart: RequestHandler = async (req: Request, res: Response): Promise<v
 
 
 const searchProducts = async (req: Request, res: Response) => {
-
     try {
-        if (!req.query.search) {
-            return res.status(400).json({ message: "Search Box is Empty", error: true, ok: false })
-        }
+        // if (!req.query.search) {
+        //     return res.status(400).json({ message: "Search Box is Empty", error: true, ok: false })
+        // }
 
         let productName = req.query.search as string;
 
         let filter = req.query.filter as string | undefined;
 
+        // console.log(filter)
         let productRegex = new RegExp(productName, "i")
 
         let product: Record<string, any> = { productName: { $regex: productRegex } };
+        let sort: { [key: string]: 1 | -1 } = {};
 
         if (filter) {
             let parsedFilter = JSON.parse(filter)
+console.log(parsedFilter)
 
-            if (parsedFilter && Object.keys(parsedFilter).length) {
+const hasFilterValues = Object.keys(parsedFilter).some(key => {
+    const value = parsedFilter[key];
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return value !== null && value !== undefined && value !== "";
+  });
 
-                if (parsedFilter.category && Array.isArray(parsedFilter.category)) {
-                    product.category = { $in: parsedFilter.category }
-                }
+if(hasFilterValues){
+    if (parsedFilter && Object.keys(parsedFilter).length) {
 
-                if (parsedFilter.Min || parsedFilter.Max) {
-                    if (parsedFilter.Max) product.Min.$gte = parsedFilter.Max
-                    if (parsedFilter.Min) product.Min.$gte = parsedFilter.Min
-                }
+        if (parsedFilter.category && Array.isArray(parsedFilter.category) && parsedFilter.category.length > 0 ) {
+            product.category = { $in: parsedFilter.category }
+        }
 
-                if (parsedFilter.availability.length) {
-                    product.availability = { $in: parsedFilter.availability }
-                }
+        // 1ST OPTION
+        // if (parsedFilter.Min || parsedFilter.Max) {
+        //     if (parsedFilter.Max) product.Min.$gte = parsedFilter.Max
+        //     if (parsedFilter.Min) product.Min.$gte = parsedFilter.Min
+        // }
 
-                if (parsedFilter.sizes.length) {
-                    product.sizes = { $in: parsedFilter.sizes }
-                }
+        // 2ND OPTION
+        // if (parsedFilter.Min || parsedFilter.Max) {
+        //     product.price = {}; // Define price object before using it
+        
+        //     if (parsedFilter.Min) product.price.$gte = parsedFilter.Min; // Min price filter
+        //     if (parsedFilter.Max) product.price.$lte = parsedFilter.Max; // Max price filter
+        // }
 
-                if (parsedFilter.colors.length) {
-                    product.colors = { $in: parsedFilter.colors }
-                }
+        // 3RD OPTION
+        if (parsedFilter.Min || parsedFilter.Max) {
+            let priceFilter: Record<string, any> = {};
+        
+            if (parsedFilter.Min) priceFilter.$gte = parsedFilter.Min;
+            if (parsedFilter.Max) priceFilter.$lte = parsedFilter.Max;
+        
+            if (Object.keys(priceFilter).length) {
+                product.price = priceFilter;
+            }
+        }
+        
 
+        // if (parsedFilter.availability.length) {
+        //     product.availability = { $in: parsedFilter.availability }
+        // }
+
+        if (parsedFilter.availability.length) {
+            if (parsedFilter.availability.includes("out of stock") && parsedFilter.availability.includes("in stock")) {
+                // If both are selected, show all products (no filter)
+                // console.log("inside the parsedFilter of both stocks")
+
+            } else if (parsedFilter.availability.includes("out of stock")) {
+                // console.log("inside the parsedFilter of out of stock")
+                product.availableStocks = { $lte: 0 }  // Filter products where stocks are 0 or less
+            } else if (parsedFilter.availability.includes("in stock")) {
+                // console.log("inside the parsedFilter of in stock")
+                product.availableStocks = { $gt: 0 }  // Filter products where stocks are greater than 0
+                console.log(product)
             }
         }
 
-        let data = await ProductModel.find(product)
-
-        if (!data.length) {
-            return res.status(402).json({ message: "No Proudcts Available", error: true, ok: false })
+        if (parsedFilter.sizes.length) {
+            product.availableSizes = { $in: parsedFilter.sizes }
         }
 
-        return res.status(200).json({ message: "Products Fetched successfully", error: true, ok: false })
+        if (parsedFilter.colors.length) {
+            product.availableColors = { $in: parsedFilter.colors }
+        }
+
+        if (parsedFilter.arrival.length) {
+            if (parsedFilter.arrival.includes("new arrival") && parsedFilter.arrival.includes("old arrival")) {
+                
+            } else if (parsedFilter.arrival.includes("new arrival")) {
+                sort.createdAt = -1; // Newest products first
+                console.log(".inside teh new arrival")
+
+            } else if (parsedFilter.arrival.includes("old arrival")) {
+                console.log(".inside teh old arrival")
+                sort.createdAt = 1; // Oldest products first
+            }
+        }
+
+    }
+}
+          
+        } 
+
+        console.log(sort)
+        let data = await ProductModel.find(product).sort(sort) 
+        // let data = await ProductModel.find({}).sort({ createdAt: -1 });
+        // let data = await ProductModel.find({}, { productName: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
+console.log(data);
+
+
+        if (!data.length) {
+            return res.status(404).json({ message: "No Products Available", error: true, ok: false })
+        }
+
+        return res.status(200).json({ message: "Products Fetched successfully", data, error: false, ok: true })
 
     }
     catch (error) {
-        console.log("error from addToCart", addToCart)
-        res.status(400).json({ message: "", error: true, ok: false })
+        if(error instanceof Error){
+            console.log("error from searchProducts", error.message)
+            res.status(400).json({ message: error.message, error: true, ok: false })
+        }
     }
 }
 

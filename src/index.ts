@@ -9,6 +9,8 @@ import productRoute from './Routes/product.route.js'
 import cartRoute from './Routes/usercart.routes.js'
 import favouriteRoute from './Routes/userfavourite.route.js'
 import reviewRoute from './Routes/review.routes.js'
+import profileRoute from './Routes/userprofile.routes.js'
+
 dotenv.config()
 
 const app = express()
@@ -25,6 +27,7 @@ app.use('/api', productRoute)
 app.use('/api', cartRoute)
 app.use('/api', favouriteRoute)
 app.use('/api', reviewRoute)
+app.use('/api', profileRoute)
 
 connectDB().then(()=>{
   app.listen(3000, ()=>{
