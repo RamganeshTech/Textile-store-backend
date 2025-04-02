@@ -1,47 +1,48 @@
 import { Request, Response } from "express";
 import ProductModel from '../Models/products.model.js';
 
-// export const createProduct = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const {
-//       productName,
-//       price,
-//       size,
-//       availableSizes,
-//       color,
-//       availableColors,
-//       availableStocks,
-//       description,
-//       category,
-//     } = req.body;
+export const createProduct = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      productName,
+      price,
+      // size,
+      availableSizes,
+      // color,
+      imageUrls,
+      availableColors,
+      availableStocks,
+      description,
+      category,
+    } = req.body;
 
 //     // req.files will contain the uploaded files by multer-s3
 //     const files = req.files as Express.Multer.File[];
 //     // Each file object from multer-s3 has a `location` property containing the S3 URL
 //     const imageUrls = files.map(file => file.location);
 
-//     // Create a new product document. Here we assume that availableSizes, availableColors, and category are sent as CSV strings.
-//     const newProduct = new ProductModel({
-//       productName,
-//       price,
-//       size,
-//       availableSizes: availableSizes ? availableSizes.split(",") : [],
-//       color,
-//       availableColors: availableColors ? availableColors.split(",") : [],
-//       availableStocks,
-//       images: imageUrls, // Save the S3 URLs for the images
-//       description,
-//       category: category ? category.split(",") : [],
-//     });
+    // Create a new product document. Here we assume that availableSizes, availableColors, and category are sent as CSV strings.
+    const newProduct = new ProductModel({
+      productName,
+      price,
+      // size,
+      availableSizes: availableSizes ? availableSizes.split(",") : [],
+      // color,
+      availableColors: availableColors ? availableColors.split(",") : [],
+      availableStocks,
+      images: imageUrls, // Save the S3 URLs for the images
+      description,
+      category: category ? category.split(",") : [],
+    });
 
-//     await newProduct.save();
+    await newProduct.save();
 
-//     res.status(201).json({ message: "Product created successfully!", product: newProduct });
-//   } catch (error) {
-//     console.error("Error creating product:", error);
-//     res.status(500).json({ message: "Internal Server Error", error: true });
-//   }
-// };
+    res.status(201).json({ message: "Product created successfully!", product: newProduct });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(500).json({ message: "Internal Server Error", error: true });
+  }
+};
 
 
 const getAllProducts = async (req: Request, res: Response) => {

@@ -91,100 +91,97 @@ const searchProducts = async (req: Request, res: Response) => {
 
         if (filter) {
             let parsedFilter = JSON.parse(filter)
-console.log(parsedFilter)
+            console.log(parsedFilter)
 
-const hasFilterValues = Object.keys(parsedFilter).some(key => {
-    const value = parsedFilter[key];
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    return value !== null && value !== undefined && value !== "";
-  });
+            const hasFilterValues = Object.keys(parsedFilter).some(key => {
+                const value = parsedFilter[key];
+                if (Array.isArray(value)) {
+                    return value.length > 0;
+                }
+                return value !== null && value !== undefined && value !== "";
+            });
 
-if(hasFilterValues){
-    if (parsedFilter && Object.keys(parsedFilter).length) {
+            if (hasFilterValues) {
+                if (parsedFilter && Object.keys(parsedFilter).length) {
 
-        if (parsedFilter.category && Array.isArray(parsedFilter.category) && parsedFilter.category.length > 0 ) {
-            product.category = { $in: parsedFilter.category }
-        }
+                    if (parsedFilter.category && Array.isArray(parsedFilter.category) && parsedFilter.category.length > 0) {
+                        product.category = { $in: parsedFilter.category }
+                    }
 
-        // 1ST OPTION
-        // if (parsedFilter.Min || parsedFilter.Max) {
-        //     if (parsedFilter.Max) product.Min.$gte = parsedFilter.Max
-        //     if (parsedFilter.Min) product.Min.$gte = parsedFilter.Min
-        // }
+                    // 1ST OPTION
+                    // if (parsedFilter.Min || parsedFilter.Max) {
+                    //     if (parsedFilter.Max) product.price.$gte = parsedFilter.Max
+                    //     if (parsedFilter.Min) product.price.$gte = parsedFilter.Min
+                    // }
 
-        // 2ND OPTION
-        // if (parsedFilter.Min || parsedFilter.Max) {
-        //     product.price = {}; // Define price object before using it
-        
-        //     if (parsedFilter.Min) product.price.$gte = parsedFilter.Min; // Min price filter
-        //     if (parsedFilter.Max) product.price.$lte = parsedFilter.Max; // Max price filter
-        // }
+                    // 2ND OPTION
+                    if (parsedFilter.Min || parsedFilter.Max) {
+                        product.price = {}; // Define price object before using it
 
-        // 3RD OPTION
-        if (parsedFilter.Min || parsedFilter.Max) {
-            let priceFilter: Record<string, any> = {};
-        
-            if (parsedFilter.Min) priceFilter.$gte = parsedFilter.Min;
-            if (parsedFilter.Max) priceFilter.$lte = parsedFilter.Max;
-        
-            if (Object.keys(priceFilter).length) {
-                product.price = priceFilter;
+                        if (parsedFilter.Min) product.price.$gte = parsedFilter.Min; // Min price filter
+                        if (parsedFilter.Max) product.price.$lte = parsedFilter.Max; // Max price filter
+                    }
+
+                    // 3RD OPTION
+                    // if (parsedFilter.Min || parsedFilter.Max) {
+                    //     let priceFilter: Record<string, any> = {};
+
+                    //     if (parsedFilter.Min) priceFilter.$gte = parsedFilter.Min;
+                    //     if (parsedFilter.Max) priceFilter.$lte = parsedFilter.Max;
+
+                    //     if (Object.keys(priceFilter).length) {
+                    //         product.price = priceFilter;
+                    //     }
+                    // }
+
+
+                    // if (parsedFilter.availability.length) {
+                    //     product.availability = { $in: parsedFilter.availability }
+                    // }
+
+                    if (parsedFilter.availability.length) {
+                        if (parsedFilter.availability.includes("out of stock") && parsedFilter.availability.includes("in stock")) {
+                            // If both are selected, show all products (no filter)
+
+                        } else if (parsedFilter.availability.includes("out of stock")) {
+                            // console.log("inside the parsedFilter of out of stock")
+                            product.availableStocks = { $lte: 0 }  // Filter products where stocks are 0 or less
+                        } else if (parsedFilter.availability.includes("in stock")) {
+                            // console.log("inside the parsedFilter of in stock")
+                            product.availableStocks = { $gt: 0 }  // Filter products where stocks are greater than 0
+                            console.log(product)
+                        }
+                    }
+
+                    if (parsedFilter.sizes.length) {
+                        product.availableSizes = { $in: parsedFilter.sizes }
+                    }
+
+                    if (parsedFilter.colors.length) {
+                        product.availableColors = { $in: parsedFilter.colors }
+                    }
+
+                    if (parsedFilter.arrival && parsedFilter.arrival.length) {
+                       if (parsedFilter.arrival.includes("new arrival")) {
+                            sort.createdAt = -1; // Newest products first
+                            console.log(".inside teh new arrival")
+
+                        } else if (parsedFilter.arrival.includes("old arrival")) {
+                            console.log(".inside teh old arrival")
+                            sort.createdAt = 1; // Oldest products first
+                        }
+                    }
+
+                }
             }
+
         }
-        
-
-        // if (parsedFilter.availability.length) {
-        //     product.availability = { $in: parsedFilter.availability }
-        // }
-
-        if (parsedFilter.availability.length) {
-            if (parsedFilter.availability.includes("out of stock") && parsedFilter.availability.includes("in stock")) {
-                // If both are selected, show all products (no filter)
-                // console.log("inside the parsedFilter of both stocks")
-
-            } else if (parsedFilter.availability.includes("out of stock")) {
-                // console.log("inside the parsedFilter of out of stock")
-                product.availableStocks = { $lte: 0 }  // Filter products where stocks are 0 or less
-            } else if (parsedFilter.availability.includes("in stock")) {
-                // console.log("inside the parsedFilter of in stock")
-                product.availableStocks = { $gt: 0 }  // Filter products where stocks are greater than 0
-                console.log(product)
-            }
-        }
-
-        if (parsedFilter.sizes.length) {
-            product.availableSizes = { $in: parsedFilter.sizes }
-        }
-
-        if (parsedFilter.colors.length) {
-            product.availableColors = { $in: parsedFilter.colors }
-        }
-
-        if (parsedFilter.arrival.length) {
-            if (parsedFilter.arrival.includes("new arrival") && parsedFilter.arrival.includes("old arrival")) {
-                
-            } else if (parsedFilter.arrival.includes("new arrival")) {
-                sort.createdAt = -1; // Newest products first
-                console.log(".inside teh new arrival")
-
-            } else if (parsedFilter.arrival.includes("old arrival")) {
-                console.log(".inside teh old arrival")
-                sort.createdAt = 1; // Oldest products first
-            }
-        }
-
-    }
-}
-          
-        } 
 
         console.log(sort)
-        let data = await ProductModel.find(product).sort(sort) 
+        let data = await ProductModel.find(product).sort(sort)
         // let data = await ProductModel.find({}).sort({ createdAt: -1 });
         // let data = await ProductModel.find({}, { productName: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
-console.log(data);
+        console.log(data);
 
 
         if (!data.length) {
@@ -195,7 +192,7 @@ console.log(data);
 
     }
     catch (error) {
-        if(error instanceof Error){
+        if (error instanceof Error) {
             console.log("error from searchProducts", error.message)
             res.status(400).json({ message: error.message, error: true, ok: false })
         }

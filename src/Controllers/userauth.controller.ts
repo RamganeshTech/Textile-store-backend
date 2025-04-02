@@ -251,6 +251,13 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // const user = await UserModel.findOne({ email });
+    if(user.resetPasswordExpire){
+      console.log("Stored Expiry Time:", new Date(user?.resetPasswordExpire)); 
+      console.log("Current Time:", new Date());
+      console.log("Time Difference:", user?.resetPasswordExpire - Date.now(), "ms");
+    }
+
     // Generate a token for password reset (using crypto or JWT)
     const resetToken = crypto.randomBytes(32).toString('hex');
 
@@ -259,7 +266,11 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
 
     // Store the hashed token and set an expiration time (1 hour)
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour in milliseconds
+    user.resetPasswordExpire = (Date.now() + 3600000); // 1 hour in milliseconds
+
+    
+console.log("After updating:");
+console.log("New Expiry Time:", new Date(user.resetPasswordExpire));
 
     await user.save();
 
@@ -278,6 +289,57 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const resetForgotPassword = async (req: Request, res: Response): Promise<any> => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+      return res.status(400).json({ message: "Invalid request. Token and password are required." });
+  }
+
+  console.log("password", password)
+
+  try {
+      // Hash the received token to match the stored one
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+      // Find the user with the provided reset token (and check if it’s not expired)
+      const user = await UserModel.findOne({
+          resetPasswordToken: hashedToken,
+          resetPasswordExpire: { $gt: Date.now() }, // Ensure token is not expired
+      });
+
+      if (!user) {
+          return res.status(400).json({ message: "Invalid or expired token." });
+      }
+
+console.log("before save",user)
+
+      // Hash the new password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+
+      let isMatching = await bcrypt.compare(password, user.password)
+      if(isMatching){
+        console.log("yes the password is updated")
+      }
+      else{
+        console.log("yes the password is not updated")
+      }
+
+      // Clear the reset token fields
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+
+      // Save the updated user data
+      await user.save();
+      // console.log("after save",user)
+
+      return res.status(200).json({ message: "Password reset successful. You can now log in." });
+  } catch (error) {
+      console.error("Error resetting password:", error);
+      return res.status(500).json({ message: "Server error. Please try again later." });
+  }
+}
 
 const logout = async (req: Request, res: Response) => {
   try {
@@ -313,5 +375,6 @@ export {
   // googleLogin,
   refreshToken,
   forgotPassword,
-  logout
+  logout,
+  resetForgotPassword
 } 

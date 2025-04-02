@@ -33,9 +33,9 @@ const reviewSchema = new Schema<IReview>({
 const productSchema = new Schema<IProduct>({
   productName: { type: String, required: true },
   price: { type: Number, required: true },
-  size: { type: String, required: true },
+  size: { type: String,},
   availableSizes: { type: [String], required: true },
-  color: { type: String, required: true },
+  color: { type: String },
   availableColors: { type: [String], required: true },
   availableStocks: { type: Number, required: true },
   images: { type: [String], required: true },
