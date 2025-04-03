@@ -10,6 +10,7 @@ import cartRoute from './Routes/usercart.routes.js'
 import favouriteRoute from './Routes/userfavourite.route.js'
 import reviewRoute from './Routes/review.routes.js'
 import profileRoute from './Routes/userprofile.routes.js'
+import paymentRoute from './Routes/paymnet.routes.js'
 
 dotenv.config()
 
@@ -28,6 +29,7 @@ app.use('/api', cartRoute)
 app.use('/api', favouriteRoute)
 app.use('/api', reviewRoute)
 app.use('/api', profileRoute)
+// app.use('/api', paymentRoute)
 
 connectDB().then(()=>{
   app.listen(3000, ()=>{
