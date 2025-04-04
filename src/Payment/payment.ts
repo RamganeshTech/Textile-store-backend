@@ -2,6 +2,8 @@ import axios from 'axios';
 import { RequestHandler, Response, Request } from 'express';
 import uniqid from 'uniqid';
 import sha256 from 'sha256'
+import OrderModel from '../Models/orders.model.js';
+import { AuthenticatedRequest } from '../Types/types.js';
 
 const HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 const MERCHANT_ID = "PGTESTPAYUAT"; //WE HAVE TO CONTACT WITH PNONEPE FOR MERCHATID AND FOR SALTKEY, just for testing pur pose we have kept like this 
@@ -125,9 +127,35 @@ const redirectUrl = async (req:Request, res:Response)=>{
 }
 
 
+const orders = async(req:Request, res:Response)=>{
+    try{
+
+        let user = (req as AuthenticatedRequest).user
+            const {color, size, productId, quantity} = req.body
+
+            if(!color || !size || !productId || !user._id|| !quantity) {
+                return res.status(400).json({message:"neccessary details are missing", error:true, ok:false,})
+            }
+
+            let data = OrderModel.create({
+                color, size, productId, userId:user._id, quantity
+            })
+
+            res.status(201).json({message:"created product", error:false, ok:true, data})
+    }
+    catch(error){
+        if(error instanceof Error){
+            console.log(error.message)
+            res.status(500).json({message:error.message, error:false, ok:true})
+        }
+    }
+}
+
+
 export {
     paymentAPi,
-    redirectUrl
+    redirectUrl,
+    orders
 }
 
 

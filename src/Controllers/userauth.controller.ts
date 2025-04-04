@@ -4,6 +4,7 @@ import jwt, { VerifyErrors } from "jsonwebtoken";
 import { UserModel } from "../Models/user.model.js";
 import sendResetEmail from "../Utils/forgotPasswordMail.js";
 import crypto from 'crypto'
+import { AuthenticatedRequest } from "../Types/types.js";
 // import admin from "../Config/firebaseAdmin.js";
 
 
@@ -78,7 +79,16 @@ const loginUser = async (req: AuthenticationRequest, res: Response) => {
         error: false,
         message: "Login successful",
         ok: true,
-        user: { userId: user._id, userName: user.userName, email, password }
+        user: {
+          userId: user._id, userName: user.userName, email, password, address: {
+            doorno: user.address?.doorno,
+            street: user.address?.street,
+            landmark: user.address?.landmark,
+            district: user.address?.district,
+            state: user.address?.state,
+            pincode: user.address?.pincode,
+          }
+        }
       });
     } else {
       return void res.status(401).json({
@@ -102,7 +112,7 @@ const loginUser = async (req: AuthenticationRequest, res: Response) => {
 
 const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userName, email, password, address, pincode, state, phoneNumber } = req.body;
+    const { userName, email, password, address: { doorno, street, state, district, pincode, landmark }, phoneNumber } = req.body;
 
     // Validate required fields
     if (!userName || !email || !password) {
@@ -127,9 +137,14 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
       userName,
       email,
       password: hashedPassword,
-      address: address ? address : null,
-      pincode: pincode ? pincode : null,
-      state: state ? state : null,
+      address: {
+        doorno: doorno || null,
+        street: street || null,
+        landmark: landmark || null,
+        district: district || null,
+        state: state || null,
+        pincode: pincode || null,
+      },
       phoneNumber: phoneNumber ? phoneNumber : null
     });
 
@@ -150,7 +165,15 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
         _id: newUser._id,
         userName: newUser.userName,
         email: newUser.email,
-        password: newUser.password
+        password: newUser.password,
+        address: {
+          doorno: newUser.address?.doorno || null,
+          street: newUser.address?.street || null,
+          landmark: newUser.address?.landmark || null,
+          district: newUser.address?.district || null,
+          state: newUser.address?.state || null,
+          pincode: newUser.address?.pincode || null,
+        }
       }
     });
   } catch (error) {
@@ -252,8 +275,8 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     }
 
     // const user = await UserModel.findOne({ email });
-    if(user.resetPasswordExpire){
-      console.log("Stored Expiry Time:", new Date(user?.resetPasswordExpire)); 
+    if (user.resetPasswordExpire) {
+      console.log("Stored Expiry Time:", new Date(user?.resetPasswordExpire));
       console.log("Current Time:", new Date());
       console.log("Time Difference:", user?.resetPasswordExpire - Date.now(), "ms");
     }
@@ -268,9 +291,9 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = (Date.now() + 3600000); // 1 hour in milliseconds
 
-    
-console.log("After updating:");
-console.log("New Expiry Time:", new Date(user.resetPasswordExpire));
+
+    console.log("After updating:");
+    console.log("New Expiry Time:", new Date(user.resetPasswordExpire));
 
     await user.save();
 
@@ -293,51 +316,51 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
   const { token, password } = req.body;
 
   if (!token || !password) {
-      return res.status(400).json({ message: "Invalid request. Token and password are required." });
+    return res.status(400).json({ message: "Invalid request. Token and password are required." });
   }
 
   console.log("password", password)
 
   try {
-      // Hash the received token to match the stored one
-      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    // Hash the received token to match the stored one
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-      // Find the user with the provided reset token (and check if it’s not expired)
-      const user = await UserModel.findOne({
-          resetPasswordToken: hashedToken,
-          resetPasswordExpire: { $gt: Date.now() }, // Ensure token is not expired
-      });
+    // Find the user with the provided reset token (and check if it’s not expired)
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }, // Ensure token is not expired
+    });
 
-      if (!user) {
-          return res.status(400).json({ message: "Invalid or expired token." });
-      }
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token." });
+    }
 
-console.log("before save",user)
+    console.log("before save", user)
 
-      // Hash the new password
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
 
-      let isMatching = await bcrypt.compare(password, user.password)
-      if(isMatching){
-        console.log("yes the password is updated")
-      }
-      else{
-        console.log("yes the password is not updated")
-      }
+    let isMatching = await bcrypt.compare(password, user.password)
+    if (isMatching) {
+      console.log("yes the password is updated")
+    }
+    else {
+      console.log("yes the password is not updated")
+    }
 
-      // Clear the reset token fields
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
+    // Clear the reset token fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
 
-      // Save the updated user data
-      await user.save();
-      // console.log("after save",user)
+    // Save the updated user data
+    await user.save();
+    // console.log("after save",user)
 
-      return res.status(200).json({ message: "Password reset successful. You can now log in." });
+    return res.status(200).json({ message: "Password reset successful. You can now log in." });
   } catch (error) {
-      console.error("Error resetting password:", error);
-      return res.status(500).json({ message: "Server error. Please try again later." });
+    console.error("Error resetting password:", error);
+    return res.status(500).json({ message: "Server error. Please try again later." });
   }
 }
 
@@ -363,8 +386,28 @@ const logout = async (req: Request, res: Response) => {
   }
   catch (error) {
     console.log(error)
-    res.status(500).json({ message: "internal server error", errormessage:error, ok: false, error: true });
+    res.status(500).json({ message: "internal server error", errormessage: error, ok: false, error: true });
 
+  }
+}
+
+const isUserAuthenticated = async (req: Request, res: Response) => {
+  try {
+    let user = (req as AuthenticatedRequest).user;
+
+    let data = await UserModel.findById(user._id)
+
+    if (!data) {
+      return res.status(404).json({ ok: true, message: "user is not authenticated", error: false, data: null });
+    }
+
+    res.status(200).json({ ok: true, message: "user is authenticated", error: false, data })
+  }
+  catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message)
+      res.status(500).json({ message: "error.message", ok: false, error: true, data: null })
+    }
   }
 }
 
@@ -376,5 +419,6 @@ export {
   refreshToken,
   forgotPassword,
   logout,
-  resetForgotPassword
+  resetForgotPassword,
+  isUserAuthenticated
 } 
