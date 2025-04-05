@@ -195,15 +195,21 @@ const getAllReview = async (req: Request, res: Response) => {
 
         let product = await ProductModel.findById(productId)
 
-        if (!product) {
-            res.status(404).json({ message: "Product not found", error: true });
+        if(!product) {
+            res.status(404).json({ message: "Product not found", error: true, ok:false });
             return;
         }
 
         let reviewItem = await ReviewModel.findOne({ productId })
 
+        if (!reviewItem) {
+            // No review document exists, return empty array.
+            res.status(200).json({ message: "No Reviews yet for this product...", data: [], error: false, ok: true });
+            return;
+          }
+
         if (!reviewItem?.reviews.length) {
-            res.status(200).json({ message: "No Reviews yet for this product...", data: [], error: true, ok: false });
+            res.status(404).json({ message: "No Reviews yet for this product...", data: [], error: true, ok: false });
             return;
         }
 
