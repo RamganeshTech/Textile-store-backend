@@ -5,6 +5,7 @@ interface FavouriteItems {
     size:string;
     color:string;
     _id?:mongoose.Types.ObjectId;
+    image:string,
 }
 
 interface IFavourite extends Document {
@@ -20,6 +21,7 @@ const FavouriteSchema = new Schema<IFavourite>({
             productId: {type: mongoose.Schema.Types.ObjectId, ref:"ProductModel"},
             size:{type:String},
             color:{type:String},
+            image:{type:String}
         }
     ]
 })

@@ -34,6 +34,9 @@ interface Items {
     productId: mongoose.Schema.Types.ObjectId,
             quantity: number,
             price:number,
+            size:string,
+            color:string,
+            image:string,
     _id?: mongoose.Schema.Types.ObjectId,
 
 }
@@ -51,12 +54,18 @@ const CartSchema = new Schema<ICart>({
         {
             productId: {type:mongoose.Types.ObjectId, required:true ,ref:"ProductModel"},
             price:{type:Number, required:true},
-            quantity:{type:Number, min:1, required:true}
+            quantity:{type:Number, min:1, required:true},
+            size:{type:String, required:true},
+            color:{type:String, required:true},
+            image:{type:String}
         }
     ],
     // total:{type:Number}
+}, {
+    timestamps:true
 })
 
+CartSchema.index({ userId: 1 });
 
 const CartModel = mongoose.model<ICart>("CartModel", CartSchema)
 
