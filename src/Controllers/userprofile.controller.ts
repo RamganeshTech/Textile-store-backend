@@ -75,16 +75,16 @@ const updateEmail = async (req: Request, res: Response):Promise<void> => {
     try {
       let user = (req as AuthenticatedRequest).user;
       let { email } = req.body;
+
+      if (!email) {
+        res.status(400).json({ message: "Email is required", error: true , ok:false});
+        return;
+     }
   
       let isUserExists = await UserModel.findById(user._id);
   
       if (!isUserExists) {
          res.status(404).json({ message: "User not found", error: true, ok:false });
-         return;
-      }
-  
-      if (!email) {
-         res.status(400).json({ message: "Email is required", error: true , ok:false});
          return;
       }
   
@@ -106,6 +106,12 @@ const updateEmail = async (req: Request, res: Response):Promise<void> => {
       let user = (req as AuthenticatedRequest).user;
       let { phoneNo } = req.body;
   
+      if (!phoneNo) {
+        res.status(400).json({ message: "Phone number is required", error: true , ok:false});
+        return;
+     }
+
+
       let isUserExists = await UserModel.findById(user._id);
   
       if (!isUserExists) {
@@ -113,10 +119,7 @@ const updateEmail = async (req: Request, res: Response):Promise<void> => {
          return;
       }
   
-      if (!phoneNo) {
-         res.status(400).json({ message: "Phone number is required", error: true , ok:false});
-         return;
-      }
+     
   
       isUserExists.phoneNumber = phoneNo;
       await isUserExists.save();
@@ -135,6 +138,11 @@ const updateEmail = async (req: Request, res: Response):Promise<void> => {
     try {
       let user = (req as AuthenticatedRequest).user;
       let { userName } = req.body;
+
+      if (!userName) {
+        res.status(400).json({ message: "Username is required", error: true, ok:false });
+        return;
+     }
   
       let isUserExists = await UserModel.findById(user._id);
   
@@ -143,10 +151,7 @@ const updateEmail = async (req: Request, res: Response):Promise<void> => {
          return;
       }
   
-      if (!userName) {
-         res.status(400).json({ message: "Username is required", error: true, ok:false });
-         return;
-      }
+    
   
       isUserExists.userName = userName;
       await isUserExists.save();

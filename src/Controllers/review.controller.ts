@@ -41,10 +41,22 @@ const createReview = async (req: Request, res: Response) => {
                 productId: product._id,
                 reviews: [{ userId: isUserExists._id, userName: isUserExists.userName, stars, description }]
             })
+
+            product.reviewStar = stars
+            await product.save()
         }
         else {
             isReviewsExists.reviews.push({ userId: isUserExists._id as mongoose.Schema.Types.ObjectId, userName: isUserExists.userName, stars, description })
             await isReviewsExists?.save()
+           
+            let totalstars =  isReviewsExists.reviews.reduce((acc:number, curr)=>{
+                // console.log("accumulator",acc)
+                // console.log("current",curr)
+                return acc + curr.stars
+              }, 0)
+    
+            product.reviewStar =  totalstars / isReviewsExists.reviews.length
+            await product.save()
         }
 
 
@@ -118,6 +130,19 @@ const editReview = async (req: Request, res: Response) => {
 
 
         reviewsExists.save()
+
+
+        let totalstars =  reviewsExists.reviews.reduce((acc:number, curr)=>{
+            // console.log("accumulator",acc)
+            // console.log("current",curr)
+            return acc + curr.stars
+          }, 0)
+
+        product.reviewStar =  totalstars / reviewsExists.reviews.length
+        console.log(product.reviewStar, "product.reviewStar")
+        await product.save()
+
+
         res.status(200).json({message:"review",data:reviewsExists, ok:true, error:false})
         return;
 
@@ -175,6 +200,15 @@ const removeReview = async (req: Request, res: Response) => {
         reviewsExists.reviews = reviewsExists.reviews.filter(review => (review._id as mongoose.Schema.Types.ObjectId).toString() !== reviewid)
         reviewsExists.save()
 
+        let totalstars =  reviewsExists.reviews.reduce((acc:number, curr)=>{
+            // console.log("accumulator",acc)
+            // console.log("current",curr)
+            return acc + curr.stars
+          }, 0)
+
+        product.reviewStar =  totalstars / reviewsExists.reviews.length
+          await product.save()
+
 
         res.status(200).json({ message: "review deleted", data: reviewsExists, error: false, ok: true });
 
@@ -212,6 +246,16 @@ const getAllReview = async (req: Request, res: Response) => {
             res.status(404).json({ message: "No Reviews yet for this product...", data: [], error: true, ok: false });
             return;
         }
+
+
+        // let totalstars =  reviewItem.reviews.reduce((acc:number, curr)=>{
+        //     console.log("accumulator",acc)
+        //     console.log("current",curr)
+        //     return acc + curr.stars
+        //   }, 0)
+
+        // let avgReview =  totalstars / reviewItem.reviews.length
+        // console.log("avgReview", avgReview)
 
         res.status(200).json({ message: "Reviews retrieved successfully", data: reviewItem.reviews, ok: true, error: false });
 

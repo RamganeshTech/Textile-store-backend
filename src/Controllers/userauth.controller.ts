@@ -271,7 +271,7 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     const user = await UserModel.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' , error:true, ok:false});
     }
 
     // const user = await UserModel.findOne({ email });
@@ -316,10 +316,10 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
   const { token, password } = req.body;
 
   if (!token || !password) {
-    return res.status(400).json({ message: "Invalid request. Token and password are required." });
+    return res.status(400).json({ message: "Invalid request. Token and password are required." , error:true, ok:false});
   }
 
-  console.log("password", password)
+  // console.log("password", password)
 
   try {
     // Hash the received token to match the stored one
@@ -332,7 +332,7 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token." });
+      return res.status(400).json({ message: "Invalid or expired token.", error:true, ok:false });
     }
 
     console.log("before save", user)
@@ -342,12 +342,12 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
     user.password = await bcrypt.hash(password, salt);
 
     let isMatching = await bcrypt.compare(password, user.password)
-    if (isMatching) {
-      console.log("yes the password is updated")
-    }
-    else {
-      console.log("yes the password is not updated")
-    }
+    // if (isMatching) {
+    //   console.log("yes the password is updated")
+    // }
+    // else {
+    //   console.log("yes the password is not updated")
+    // }
 
     // Clear the reset token fields
     user.resetPasswordToken = undefined;
@@ -357,10 +357,10 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
     await user.save();
     // console.log("after save",user)
 
-    return res.status(200).json({ message: "Password reset successful. You can now log in." });
+    return res.status(200).json({ message: "Password reset successful. You can now log in." , error:false, ok:true});
   } catch (error) {
     console.error("Error resetting password:", error);
-    return res.status(500).json({ message: "Server error. Please try again later." });
+    return res.status(500).json({ message: "Server error. Please try again later.", error:true, ok:false });
   }
 }
 
