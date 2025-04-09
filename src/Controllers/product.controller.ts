@@ -59,50 +59,55 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
     } = req.body;
 
     // If no colorVariants are sent, assign random placeholder images to some default colors
-    const defaultColors = ["Red", "Blue", "Green", "Black"];
-    const defaultColorVariants = defaultColors.map((color, index) => ({
-      color,
-      images: [
-        `https://picsum.photos/200/300?random=${index + 1}`,
-        `https://picsum.photos/200/300?random=${index + 10}`
-      ]
-    }));
+    // const defaultColors = ["Red", "Blue", "Green", "Black"];
+    // const defaultColorVariants = defaultColors.map((color, index) => ({
+    //   color,
+    //   images: [
+    //     `https://picsum.photos/200/300?random=${index + 1}`,
+    //     `https://picsum.photos/200/300?random=${index + 10}`
+    //   ]
+    // }));
 
-    const newProduct = new ProductModel({
+    const newProduct = await ProductModel.create({
       productName,
       price,
       description,
       reviewStar : 0,
-      category: category ? category : [],
-      colorVariants: colorVariants && colorVariants.length > 0 ? colorVariants : defaultColorVariants,
-      sizeVariants: sizeVariants && sizeVariants.length > 0 ? sizeVariants : [
-        {
-          size: "M",
-          colors: [
-            { color: "Red", availableStock: 10 },
-            { color: "Blue", availableStock: 5 }
-          ]
-        },
-        {
-          size: "L",
-          colors: [
-            { color: "Green", availableStock: 8 }
-          ]
-        }
-      ],
+      category,
+      colorVariants,
+      sizeVariants,
+
+      // [
+      //   {
+      //     size: "M",
+      //     colors: [
+      //       { color: "Red", availableStock: 10 },
+      //       { color: "Blue", availableStock: 5 }
+      //     ]
+      //   },
+      //   {
+      //     size: "L",
+      //     colors: [
+      //       { color: "Green", availableStock: 8 }
+      //     ]
+      //   }
+      // ],
     });
 
-    await newProduct.save();
+    // await newProduct.save();
 
     res.status(201).json({
       message: "Product created successfully!",
-      product: newProduct,
+      data: newProduct,
+      ok:true,
+      error:false,
     });
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({
       message: "Internal Server Error",
       error: true,
+      ok:false,
     });
   }
 };

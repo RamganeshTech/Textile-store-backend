@@ -11,7 +11,7 @@ const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: Ne
         const token = req.cookies?.useraccesstoken;
 
         if (!token) {
-            res.status(401).json({ message: "Unauthorized: No token provided", error: true });
+            res.status(401).json({ message: "Unauthorized: Please login", error: true });
             return;
         }
 

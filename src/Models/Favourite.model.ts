@@ -2,8 +2,8 @@ import mongoose , {Schema, Document} from "mongoose";
 
 interface FavouriteItems {
     productId: mongoose.Types.ObjectId;
-    size:string;
-    color:string;
+    // size:string;
+    // color:string;
     _id?:mongoose.Types.ObjectId;
     image:string,
 }
@@ -19,8 +19,8 @@ const FavouriteSchema = new Schema<IFavourite>({
     items:[
         {
             productId: {type: mongoose.Schema.Types.ObjectId, ref:"ProductModel"},
-            size:{type:String},
-            color:{type:String},
+            // size:{type:String},
+            // color:{type:String},
             image:{type:String}
         }
     ]
