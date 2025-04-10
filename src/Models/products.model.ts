@@ -31,6 +31,13 @@ interface IReview {
 //   category?: string[];
 // }
 
+export interface SizeVariant {
+  size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+    colors: {
+      color: string;
+      availableStock: number;
+    }[];
+}
 
 interface IProduct extends Document {
   productName: string;
@@ -41,13 +48,7 @@ interface IProduct extends Document {
     color: string;
     images: string[];
   }[];
-  sizeVariants: {
-    size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
-    colors: {
-      color: string;
-      availableStock: number;
-    }[];
-  }[];
+  sizeVariants: SizeVariant[];
   // reviews: IReview[];
   reviewStar: number;
 }

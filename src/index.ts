@@ -12,7 +12,16 @@ import reviewRoute from './Routes/review.routes.js'
 import profileRoute from './Routes/userprofile.routes.js'
 import paymentRoute from './Routes/paymnet.routes.js'
 
+import fs from 'fs';
+import path from 'path';
 dotenv.config()
+
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
 
 const app = express()
 app.use(cors({
@@ -21,6 +30,7 @@ app.use(cors({
 }))
 app.use(cookieParser())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api', userRoute)
@@ -30,6 +40,14 @@ app.use('/api', favouriteRoute)
 app.use('/api', reviewRoute)
 app.use('/api', profileRoute)
 // app.use('/api', paymentRoute)
+
+const uploadsPath = path.join(__dirname, 'temp_uploads');
+
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+  console.log(`Created folder: ${uploadsPath}`);
+}
+
 
 connectDB().then(()=>{
   app.listen(3000, ()=>{
