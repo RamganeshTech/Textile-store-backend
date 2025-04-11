@@ -13,7 +13,7 @@ const createReview = async (req: Request, res: Response) => {
         let product = await ProductModel.findById(productId)
 
         if (!product) {
-            res.status(404).json({ message: "Product not found", error: true });
+            res.status(404).json({ message: "Product not found", error: true, ok:false });
             return;
         }
 
@@ -22,7 +22,7 @@ const createReview = async (req: Request, res: Response) => {
         let isUserExists = await UserModel.findById(user._id);
 
         if (!isUserExists) {
-            res.status(404).json({ message: "User not found", error: true });
+            res.status(404).json({ message: "User not found", error: true, ok:false });
             return;
         }
 
@@ -84,38 +84,38 @@ const editReview = async (req: Request, res: Response) => {
         let isUserExists = await UserModel.findById(user._id);
 
         if (!isUserExists) {
-            res.status(404).json({ message: "User not found", error: true });
+            res.status(404).json({ message: "User not found", error: true, ok:false });
             return;
         }
 
         if (!productId) {
-            res.status(404).json({ message: "please provide the productId", error: true });
+            res.status(404).json({ message: "please provide the productId", error: true, ok:false });
             return;
         }
         let product = await ProductModel.findById(productId)
 
         if (!product) {
-            res.status(404).json({ message: "Product not found", error: true });
+            res.status(404).json({ message: "Product not found", error: true, ok:false });
             return;
         }
 
 
         if (!reviewid) {
-            res.status(404).json({ message: "please select the review to delete", error: true });
+            res.status(404).json({ message: "please select the review to delete", error: true, ok:false });
             return;
         }
 
         let reviewsExists = await ReviewModel.findOne({ productId })
 
         if (!reviewsExists) {
-            res.status(404).json({ message: "review for this product not found", error: true });
+            res.status(404).json({ message: "review for this product not found", error: true, ok:false });
             return;
         }
 
         let userReviewIndex = reviewsExists.reviews.findIndex(review =>  (review._id as mongoose.Schema.Types.ObjectId).toString() === reviewid.toString())
 
         if(userReviewIndex === -1) {
-             res.status(404).json({ message: "Review not found", error: true });
+             res.status(404).json({ message: "Review not found", error: true, ok:false });
              return;
         }
 
@@ -193,7 +193,7 @@ const removeReview = async (req: Request, res: Response) => {
         let reviewsExists = await ReviewModel.findOne({ productId })
 
         if (!reviewsExists) {
-            res.status(404).json({ message: "review for this product not found", error: true });
+            res.status(404).json({ message: "review for this product not found", error: true , ok:false});
             return;
         }
 
@@ -238,7 +238,7 @@ const getAllReview = async (req: Request, res: Response) => {
 
         if (!reviewItem) {
             // No review document exists, return empty array.
-            res.status(200).json({ message: "No Reviews yet for this product...", data: [], error: false, ok: true });
+            res.status(404).json({ message: "No Reviews yet for this product...", data: [], error: false, ok: true });
             return;
           }
 
@@ -264,7 +264,7 @@ const getAllReview = async (req: Request, res: Response) => {
     catch (error) {
         if (error instanceof Error) {
             console.log("error from create Review", error.message)
-            res.status(400).json({ message: error.message, error: true, ok: false })
+            res.status(500).json({ message: error.message, error: true, ok: false })
             return;
         }
     }
