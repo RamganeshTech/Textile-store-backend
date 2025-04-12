@@ -10,10 +10,17 @@ const createReview = async (req: Request, res: Response) => {
 
         let { productId, star:stars, description } = req.body;
 
+        // console.log("stars",stars)
+
         let product = await ProductModel.findById(productId)
 
         if (!product) {
             res.status(404).json({ message: "Product not found", error: true, ok:false });
+            return;
+        }
+
+        if(description.length>500){
+            res.status(400).json({ message: "description should be less then 500 characters", error: true, ok:false });
             return;
         }
 
@@ -41,6 +48,8 @@ const createReview = async (req: Request, res: Response) => {
                 productId: product._id,
                 reviews: [{ userId: isUserExists._id, userName: isUserExists.userName, stars, description }]
             })
+
+
 
             product.reviewStar = stars
             await product.save()
@@ -92,6 +101,15 @@ const editReview = async (req: Request, res: Response) => {
             res.status(404).json({ message: "please provide the productId", error: true, ok:false });
             return;
         }
+
+        // console.log("description.length", description.length)
+
+        if(description.length>500){
+            res.status(400).json({ message: "description should be less then 500 characters", error: true, ok:false });
+            return;
+        }
+
+
         let product = await ProductModel.findById(productId)
 
         if (!product) {
@@ -139,7 +157,7 @@ const editReview = async (req: Request, res: Response) => {
           }, 0)
 
         product.reviewStar =  totalstars / reviewsExists.reviews.length
-        console.log(product.reviewStar, "product.reviewStar")
+        // console.log(product.reviewStar, "product.reviewStar")
         await product.save()
 
 
@@ -198,15 +216,24 @@ const removeReview = async (req: Request, res: Response) => {
         }
 
         reviewsExists.reviews = reviewsExists.reviews.filter(review => (review._id as mongoose.Schema.Types.ObjectId).toString() !== reviewid)
-        reviewsExists.save()
+        await reviewsExists.save()
+        
+      
 
         let totalstars =  reviewsExists.reviews.reduce((acc:number, curr)=>{
             // console.log("accumulator",acc)
             // console.log("current",curr)
             return acc + curr.stars
-          }, 0)
+        }, 0)
+        
 
-        product.reviewStar =  totalstars / reviewsExists.reviews.length
+        if (reviewsExists.reviews.length === 0) {
+            product.reviewStar = 0; // or null, depending on how you want to handle it
+        } else {
+            product.reviewStar = totalstars / reviewsExists.reviews.length;
+        }
+        
+        // product.reviewStar =  totalstars / reviewsExists.reviews.length
           await product.save()
 
 
@@ -247,19 +274,7 @@ const getAllReview = async (req: Request, res: Response) => {
             return;
         }
 
-
-        // let totalstars =  reviewItem.reviews.reduce((acc:number, curr)=>{
-        //     console.log("accumulator",acc)
-        //     console.log("current",curr)
-        //     return acc + curr.stars
-        //   }, 0)
-
-        // let avgReview =  totalstars / reviewItem.reviews.length
-        // console.log("avgReview", avgReview)
-
         res.status(200).json({ message: "Reviews retrieved successfully", data: reviewItem.reviews, ok: true, error: false });
-
-
     }
     catch (error) {
         if (error instanceof Error) {
