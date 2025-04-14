@@ -31,7 +31,7 @@ export const uploadImage = async (req: Request, res: Response) => {
         const result = await cloudinary.uploader.upload(file.path, {
           folder: 'bmbfashion',
         });
-        
+
         fs.unlinkSync(file.path); // Delete temp file after upload
         return {
           url: result.secure_url,
@@ -75,17 +75,17 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       category,
       sizeVariants,
     } = req.body;
-     
+
     console.log("im createProduct called")
     // expected to be an array of
-      //  [{ size:"s", 
-      // colors: [
-      //         { color:"red", 
-      //           availableStock:"10",
-      //           images: ["file1", "file2"]
-      //          }
-      //          ]
-      //  }]
+    //  [{ size:"s", 
+    // colors: [
+    //         { color:"red", 
+    //           availableStock:"10",
+    //           images: ["file1", "file2"]
+    //          }
+    //          ]
+    //  }]
 
 
 
@@ -94,32 +94,32 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if(!sizeVariants.every((size:any)=> Object.entries(size).every(([key,value])=> size[key] ))){
+    if (!sizeVariants.every((size: any) => Object.entries(size).every(([key, value]) => size[key]))) {
       res.status(400).json({ message: "size must be provided", error: true, ok: false })
       return;
     }
 
 
     // [{ size:"s", 
-      // colors: [
-      //         { color:"red", 
-      //           availableStock:"10",
-      //           images: ["file1", "file2"]
-      //          }
-      //          ]
-      //  }]
-    let colorVariants:any = [];
+    // colors: [
+    //         { color:"red", 
+    //           availableStock:"10",
+    //           images: ["file1", "file2"]
+    //          }
+    //          ]
+    //  }]
+    let colorVariants: any = [];
 
 
-    
-    
 
-    sizeVariants.forEach((item:InputSizeVariant)=>{
-      item.colors.forEach((colorItem:ColorsList) => {
 
-        if(colorItem.availableStock<=0 || !colorItem.color){
+
+    sizeVariants.forEach((item: InputSizeVariant) => {
+      item.colors.forEach((colorItem: ColorsList) => {
+
+        if (colorItem.availableStock <= 0 || !colorItem.color) {
           res.status(400).json({ message: "available stock should be atleast above zero", error: true, ok: false })
-          return;        
+          return;
         }
 
         // const singleColorVariant = {
@@ -128,15 +128,15 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         // };
         // colorVariants.push(singleColorVariant)
         // console.log("singleColorVariant",singleColorVariant)
-                const imageUrls = colorItem.images.map((img: any) => img.url); // extract only URLs
+        const imageUrls = colorItem.images.map((img: any) => img.url); // extract only URLs
 
-                const singleColorVariant = {
-                  color: colorItem.color,
-                  images: imageUrls
-                };
-            
-                colorVariants.push(singleColorVariant);
-            
+        const singleColorVariant = {
+          color: colorItem.color,
+          images: imageUrls
+        };
+
+        colorVariants.push(singleColorVariant);
+
       });
     })
 
@@ -204,4 +204,78 @@ const getAllProducts = async (req: Request, res: Response) => {
   }
 };
 
-export { getAllProducts }
+
+const editProducts = async (req: Request, res: Response) => {
+  try {
+    let { productId } = req.params
+    let { productName, description, price, sizeVariants, category } = req.body
+
+    if (!productId) {
+      res.status(404).json({ message: "productId not Found", error: true, ok: false })
+      return;
+    }
+
+    let product = await ProductModel.findById(productId)
+
+    if (!product) {
+      res.status(404).json({ message: "product not available", error: true, ok: false })
+      return;
+    }
+
+    if (productName) {
+      product.productName = productName
+    }
+
+    if (description) {
+      product.description = description
+    }
+
+    if (price) {
+      product.price = price
+    }
+
+    if (category) {
+      product.category = category
+    }
+
+    if(sizeVariants.length){
+      let colorVariants: any = [];
+
+      sizeVariants.forEach((item: InputSizeVariant) => {
+        item.colors.forEach((colorItem: ColorsList) => {
+  
+          if (colorItem.availableStock <= 0 || !colorItem.color) {
+            res.status(400).json({ message: "available stock should be atleast above zero", error: true, ok: false })
+            return;
+          }
+  
+          const imageUrls = colorItem.images.map((img: any) => img.url); // extract only URLs
+  
+          const singleColorVariant = {
+            color: colorItem.color,
+            images: imageUrls
+          };
+  
+          colorVariants.push(singleColorVariant);
+  
+        });
+      })
+
+      product.sizeVariants = sizeVariants
+      product.colorVariants = colorVariants
+    }
+
+    let data = await product.save()
+
+    res.status(200).json({ message: "changes made to the product", data, ok: true, error: false })
+  }
+  catch (error) {
+    if (error instanceof Error) {
+      console.error("Error editing products:", error);
+      res.status(500).json({ message: "Internal Server Error", error: error.message, ok: false });
+      return;
+    }
+  }
+}
+
+export { getAllProducts, editProducts }
