@@ -3,6 +3,7 @@ import AdminModel from "../Models/admin.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from 'bcrypt';
 import { AuthenticateAdminRequest, AuthenticatedRequest } from "../Types/types.js";
+import ProductModel from "../Models/products.model.js";
 
 const adminLogin = async (req: Request, res: Response) => {
     try {
@@ -124,4 +125,23 @@ const isAdminAuthenticated = async (req: Request, res: Response) => {
 
 }
 
-export { adminLogin, adminLogout, isAdminAuthenticated }
+const getAllProducts = async (req: Request, res: Response) => {
+    try {
+      const products = await ProductModel.find(); // Fetch all products
+  
+      if (products.length === 0) {
+        return res.status(200).json({ message: "No products found", data: [], ok: false, error: true });
+      }
+  
+      return res.status(200).json({ message: "Products retrieved successfully", data: products, ok: true, error: false });
+    } catch (error) {
+  
+      if (error instanceof Error) {
+        console.error("Error fetching products:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message, ok: false });
+        return;
+      }
+    }
+  };
+
+export { adminLogin, adminLogout, isAdminAuthenticated, getAllProducts }
