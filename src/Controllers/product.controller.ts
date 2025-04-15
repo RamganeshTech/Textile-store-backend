@@ -18,7 +18,7 @@ export interface ColorsList {
 
 
 // controllers/uploadController.ts
-export const uploadImage = async (req: Request, res: Response) => {
+ const uploadImage = async (req: Request, res: Response) => {
   try {
     const files = req.files as Express.Multer.File[];
 
@@ -66,7 +66,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 };
 
 
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
+ const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       productName,
@@ -278,4 +278,33 @@ const editProducts = async (req: Request, res: Response) => {
   }
 }
 
-export { getAllProducts, editProducts }
+const deleteProduct = async (req:Request, res:Response)=>{
+  try{
+    let {productId} = req.params
+
+    if (!productId) {
+      res.status(404).json({ message: "productId not Found", error: true, ok: false })
+      return;
+    }
+
+    let product = await ProductModel.findById(productId)
+
+    if (!product) {
+      res.status(404).json({ message: "product not available", error: true, ok: false })
+      return;
+    }
+
+    let data = await ProductModel.findByIdAndDelete(productId, {returnDocument:"after"})
+
+    res.status(200).json({message:"product Deleted Successfully", ok:true, error:false, data})
+  }
+  catch(error){
+    if(error instanceof Error){
+      console.error("Error deleting products:", error);
+      res.status(500).json({ message: "Internal Server Error", error: error.message, ok: false });
+      return;
+    }
+  }
+}
+
+export { getAllProducts, editProducts, deleteProduct, uploadImage, createProduct }
