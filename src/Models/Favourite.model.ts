@@ -26,6 +26,8 @@ const FavouriteSchema = new Schema<IFavourite>({
     ]
 })
 
+FavouriteSchema.index({userId:1})
+
 const FavouriteModel = mongoose.model<IFavourite>('FavouriteModel', FavouriteSchema)
 
 export default FavouriteModel;

@@ -27,7 +27,7 @@ const ReviewSchema = new Schema<ReviewType>({
         }
     ]
 })
-
+ReviewSchema.index({productId:1})
 const ReviewModel = mongoose.model<ReviewType>('ReviewModel', ReviewSchema);
 
 export default ReviewModel;
