@@ -71,9 +71,18 @@ const loginUser = async (req: AuthenticationRequest, res: Response) => {
       const accessToken = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
       const refreshtoken = jwt.sign({ _id: user._id }, process.env.JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
 
-      res.cookie("userrefreshtoken", refreshtoken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 })
+      res.cookie("userrefreshtoken", refreshtoken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 7
+      })
 
-      res.cookie("useraccesstoken", accessToken, { httpOnly: true, maxAge: 1000 * 60 * 60 });
+      res.cookie("useraccesstoken", accessToken, {
+         httpOnly: true,
+         secure: process.env.NODE_ENV === "production",
+         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+         maxAge: 1000 * 60 * 60 });
 
       return void res.status(200).json({
         error: false,
@@ -153,8 +162,16 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
     const accesstoken = jwt.sign(tokenPayload, process.env.JWT_SECRET as string, { expiresIn: '1h' });
     const refreshtoken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
 
-    res.cookie("useraccesstoken", accesstoken, { httpOnly: true, maxAge: 1000 * 60 * 5 })
-    res.cookie("userrefreshtoken", refreshtoken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 })
+    res.cookie("useraccesstoken", accesstoken, { 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 5 })
+    res.cookie("userrefreshtoken", refreshtoken, {
+       httpOnly: true,
+       secure: process.env.NODE_ENV === "production",
+         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7 })
 
     // Return success response with the token and minimal user info
     res.status(201).json({
@@ -271,14 +288,14 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     const user = await UserModel.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' , error:true, ok:false});
+      return res.status(404).json({ message: 'User not found', error: true, ok: false });
     }
 
     // const user = await UserModel.findOne({ email });
     if (user.resetPasswordExpire) {
-      console.log("Stored Expiry Time:", new Date(user?.resetPasswordExpire));
-      console.log("Current Time:", new Date());
-      console.log("Time Difference:", user?.resetPasswordExpire - Date.now(), "ms");
+      // console.log("Stored Expiry Time:", new Date(user?.resetPasswordExpire));
+      // console.log("Current Time:", new Date());
+      // console.log("Time Difference:", user?.resetPasswordExpire - Date.now(), "ms");
     }
 
     // Generate a token for password reset (using crypto or JWT)
@@ -290,10 +307,6 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     // Store the hashed token and set an expiration time (1 hour)
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = (Date.now() + 3600000); // 1 hour in milliseconds
-
-
-    console.log("After updating:");
-    console.log("New Expiry Time:", new Date(user.resetPasswordExpire));
 
     await user.save();
 
@@ -316,10 +329,9 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
   const { token, password } = req.body;
 
   if (!token || !password) {
-    return res.status(400).json({ message: "Invalid request. Token and password are required." , error:true, ok:false});
+    return res.status(400).json({ message: "Invalid request. Token and password are required.", error: true, ok: false });
   }
 
-  // console.log("password", password)
 
   try {
     // Hash the received token to match the stored one
@@ -332,22 +344,15 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token.", error:true, ok:false });
+      return res.status(400).json({ message: "Invalid or expired token.", error: true, ok: false });
     }
 
-    console.log("before save", user)
 
     // Hash the new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
     let isMatching = await bcrypt.compare(password, user.password)
-    // if (isMatching) {
-    //   console.log("yes the password is updated")
-    // }
-    // else {
-    //   console.log("yes the password is not updated")
-    // }
 
     // Clear the reset token fields
     user.resetPasswordToken = undefined;
@@ -355,12 +360,11 @@ const resetForgotPassword = async (req: Request, res: Response): Promise<any> =>
 
     // Save the updated user data
     await user.save();
-    // console.log("after save",user)
 
-    return res.status(200).json({ message: "Password reset successful. You can now log in." , error:false, ok:true});
+    return res.status(200).json({ message: "Password reset successful. You can now log in.", error: false, ok: true });
   } catch (error) {
     console.error("Error resetting password:", error);
-    return res.status(500).json({ message: "Server error. Please try again later.", error:true, ok:false });
+    return res.status(500).json({ message: "Server error. Please try again later.", error: true, ok: false });
   }
 }
 

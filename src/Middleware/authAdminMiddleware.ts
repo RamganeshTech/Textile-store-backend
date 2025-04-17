@@ -16,7 +16,6 @@ const authAdminMiddleware = async (req:AuthenticateAdminRequest, res:Response, n
 
        const decoded = jwt.verify(token, process.env.JWT_ADMIN_SECRET as string)
 
-       console.log(decoded)
        req.admin = decoded as Record<string , any>;
        next();
     }

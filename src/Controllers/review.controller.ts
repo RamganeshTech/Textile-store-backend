@@ -10,8 +10,6 @@ const createReview = async (req: Request, res: Response) => {
 
         let { productId, star:stars, description } = req.body;
 
-        // console.log("stars",stars)
-
         let product = await ProductModel.findById(productId)
 
         if (!product) {
@@ -19,7 +17,7 @@ const createReview = async (req: Request, res: Response) => {
             return;
         }
 
-        if(description.length>500){
+        if(description && description.length>500){
             res.status(400).json({ message: "description should be less then 500 characters", error: true, ok:false });
             return;
         }
@@ -59,8 +57,6 @@ const createReview = async (req: Request, res: Response) => {
             await isReviewsExists?.save()
            
             let totalstars =  isReviewsExists.reviews.reduce((acc:number, curr)=>{
-                // console.log("accumulator",acc)
-                // console.log("current",curr)
                 return acc + curr.stars
               }, 0)
     
@@ -102,9 +98,8 @@ const editReview = async (req: Request, res: Response) => {
             return;
         }
 
-        // console.log("description.length", description.length)
 
-        if(description.length>500){
+        if(description && description.length>500){
             res.status(400).json({ message: "description should be less then 500 characters", error: true, ok:false });
             return;
         }
@@ -151,13 +146,10 @@ const editReview = async (req: Request, res: Response) => {
 
 
         let totalstars =  reviewsExists.reviews.reduce((acc:number, curr)=>{
-            // console.log("accumulator",acc)
-            // console.log("current",curr)
             return acc + curr.stars
           }, 0)
 
         product.reviewStar =  totalstars / reviewsExists.reviews.length
-        // console.log(product.reviewStar, "product.reviewStar")
         await product.save()
 
 
@@ -221,8 +213,6 @@ const removeReview = async (req: Request, res: Response) => {
       
 
         let totalstars =  reviewsExists.reviews.reduce((acc:number, curr)=>{
-            // console.log("accumulator",acc)
-            // console.log("current",curr)
             return acc + curr.stars
         }, 0)
         

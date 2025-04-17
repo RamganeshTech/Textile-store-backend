@@ -45,7 +45,6 @@ const verifyPassword = async (req: Request, res: Response):Promise<void> => {
     try { 
       let user = (req as AuthenticatedRequest).user;
       let { password } = req.body;
-      // console.log("verifypassword api password",password)
   
       let isUserExists = await UserModel.findById(user._id);
   

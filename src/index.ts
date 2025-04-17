@@ -16,6 +16,7 @@ import paymentRoute from './Routes/paymnet.routes.js'
 import fs from 'fs';
 import path from 'path';
 dotenv.config()
+// require('dotenv').config({ path: '.env.production' });
 
 import { fileURLToPath } from 'url';
 

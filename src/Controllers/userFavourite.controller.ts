@@ -326,10 +326,6 @@ const getfavouriteItems = async (req: Request, res: Response) => {
         const userId = authReq.user._id;
         const favouriteItem = await FavouriteModel.findOne({ userId }).populate("items.productId"); // Populates product details if needed
 
-
-        console.log("favouriteItem", favouriteItem)
-
-
         if (!favouriteItem) {
             res.status(200).json({ message: "Favourite is empty", data: [] });
             return;

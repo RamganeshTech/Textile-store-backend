@@ -215,15 +215,14 @@ const searchProducts = async (req: Request, res: Response) => {
 
         let filter = req.query.filter as string | undefined;
 
-        // console.log(filter)
         let productRegex = new RegExp(productName, "i")
 
         let product: Record<string, any> = { productName: { $regex: productRegex } };
         let sort: { [key: string]: 1 | -1 } = {};
 
+
         if (filter) {
             let parsedFilter = JSON.parse(filter)
-            console.log(parsedFilter)
 
             const hasFilterValues = Object.keys(parsedFilter).some(key => {
                 const value = parsedFilter[key];
@@ -276,30 +275,42 @@ const searchProducts = async (req: Request, res: Response) => {
                             // If both are selected, show all products (no filter)
 
                         } else if (parsedFilter.availability.includes("out of stock")) {
-                            // console.log("inside the parsedFilter of out of stock")
                             product.availableStocks = { $lte: 0 }  // Filter products where stocks are 0 or less
                         } else if (parsedFilter.availability.includes("in stock")) {
-                            // console.log("inside the parsedFilter of in stock")
                             product.availableStocks = { $gt: 0 }  // Filter products where stocks are greater than 0
-                            console.log(product)
                         }
                     }
 
+                  
+                    // if (parsedFilter.sizes.length) {
+                    //     product.availableSizes = { $in: parsedFilter.sizes }
+                    // }
+
+                    // if (parsedFilter.colors.length) {
+                    //     product.availableColors = { $in: parsedFilter.colors }
+                    // }
+
                     if (parsedFilter.sizes.length) {
-                        product.availableSizes = { $in: parsedFilter.sizes }
+                        product.sizeVariants = {
+                            $elemMatch: {
+                                size: { $in: parsedFilter.sizes }
+                            }
+                        };
                     }
 
                     if (parsedFilter.colors.length) {
-                        product.availableColors = { $in: parsedFilter.colors }
+                        product.colorVariants = {
+                            $elemMatch: {
+                                color: { $in: parsedFilter.colors }
+                            }
+                        };
                     }
 
                     if (parsedFilter.arrival && parsedFilter.arrival.length) {
                        if (parsedFilter.arrival.includes("new arrival")) {
                             sort.createdAt = -1; // Newest products first
-                            console.log(".inside teh new arrival")
 
                         } else if (parsedFilter.arrival.includes("old arrival")) {
-                            console.log(".inside teh old arrival")
                             sort.createdAt = 1; // Oldest products first
                         }
                     }
@@ -309,13 +320,8 @@ const searchProducts = async (req: Request, res: Response) => {
 
         }
 
-        console.log(sort)
         let data = await ProductModel.find(product).sort(sort)
-        // let data = await ProductModel.find({}).sort({ createdAt: -1 });
-        // let data = await ProductModel.find({}, { productName: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean();
-        console.log(data);
-
-
+        
         if (!data.length) {
             return res.status(404).json({ message: "No Products Available", error: true, ok: false })
         }
@@ -336,7 +342,6 @@ const filterProducts = async (req: Request, res: Response) => {
 
     }
     catch (error) {
-        console.log("error from addToCart", addToCart)
         res.status(400).json({ message: "", error: true, ok: false })
     }
 }

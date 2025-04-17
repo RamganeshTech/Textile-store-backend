@@ -9,13 +9,13 @@ const adminLogin = async (req: Request, res: Response) => {
     try {
         let accessToken = req.cookies?.adminaccesstoken
 
-        // if (accessToken) {
-        //     res.status(400).json({
-        //         message: "Admin already logged in ", error: true, ok: false,
-        //         isAuthenticated: false
-        //     });
-        //     return;
-        // }
+        if (accessToken) {
+            res.status(400).json({
+                message: "Admin already logged in ", error: true, ok: false,
+                isAuthenticated: false
+            });
+            return;
+        }
 
         const { email, password } = req.body
 
@@ -56,7 +56,9 @@ const adminLogin = async (req: Request, res: Response) => {
         res.cookie("adminaccesstoken", adminaccesstoken, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
-            secure: process.env.NODE_ENV === "production"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+
         })
 
 
@@ -83,7 +85,7 @@ const adminLogout = async (req: Request, res: Response) => {
         //     return;
         // } 
 
-        res.clearCookie("adminaccesstoken", { 
+        res.clearCookie("adminaccesstoken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production", // Only secure in production
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -112,7 +114,7 @@ const isAdminAuthenticated = async (req: Request, res: Response) => {
             return res.status(404).json({ ok: true, message: "admin is not authenticated", error: false, isAuthenticated: false });
         }
 
-        res.status(200).json({ isAuthenticated: true, error: false, ok: true , email:data.email})
+        res.status(200).json({ isAuthenticated: true, error: false, ok: true, email: data.email })
         return;
     }
     catch (error) {
@@ -127,21 +129,21 @@ const isAdminAuthenticated = async (req: Request, res: Response) => {
 
 const getAllProducts = async (req: Request, res: Response) => {
     try {
-      const products = await ProductModel.find(); // Fetch all products
-  
-      if (products.length === 0) {
-        return res.status(200).json({ message: "No products found", data: [], ok: false, error: true });
-      }
-  
-      return res.status(200).json({ message: "Products retrieved successfully", data: products, ok: true, error: false });
+        const products = await ProductModel.find(); // Fetch all products
+
+        if (products.length === 0) {
+            return res.status(200).json({ message: "No products found", data: [], ok: false, error: true });
+        }
+
+        return res.status(200).json({ message: "Products retrieved successfully", data: products, ok: true, error: false });
     } catch (error) {
-  
-      if (error instanceof Error) {
-        console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message, ok: false });
-        return;
-      }
+
+        if (error instanceof Error) {
+            console.error("Error fetching products:", error);
+            res.status(500).json({ message: "Internal Server Error", error: error.message, ok: false });
+            return;
+        }
     }
-  };
+};
 
 export { adminLogin, adminLogout, isAdminAuthenticated, getAllProducts }

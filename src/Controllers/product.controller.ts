@@ -76,7 +76,6 @@ export interface ColorsList {
       sizeVariants,
     } = req.body;
 
-    console.log("im createProduct called")
     // expected to be an array of
     //  [{ size:"s", 
     // colors: [
@@ -190,7 +189,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const products = await ProductModel.find(); // Fetch all products
 
     if (products.length === 0) {
-      return res.status(200).json({ message: "No products found", data: [], ok: false, error: true });
+      return res.status(404).json({ message: "No products found", data: [], ok: false, error: true });
     }
 
     return res.status(200).json({ message: "Products retrieved successfully", data: products, ok: true, error: false });
