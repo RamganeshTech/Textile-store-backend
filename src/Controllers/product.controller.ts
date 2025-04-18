@@ -30,6 +30,11 @@ export interface ColorsList {
       files.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.path, {
           folder: 'bmbfashion',
+          transformation: [
+            { width: 800, height: 800, crop: 'limit' },  // Resize image (optional)
+            { quality: 'auto' }, // Auto-quality compression
+            { fetch_format: 'auto' },  // Automatically convert to WebP or other formats
+          ],
         });
 
         fs.unlinkSync(file.path); // Delete temp file after upload
@@ -61,7 +66,7 @@ export interface ColorsList {
 
   } catch (error) {
     console.log("Image upload failed", error)
-    res.status(500).json({ error: 'Image upload failed', detail: error });
+    res.status(500).json({ message: 'Image upload failed', error });
   }
 };
 
