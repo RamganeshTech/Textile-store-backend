@@ -12,13 +12,13 @@ import reviewRoute from './Routes/review.routes.js'
 import profileRoute from './Routes/userprofile.routes.js'
 import adminRoute from './Routes/admin.route.js'
 import paymentRoute from './Routes/paymnet.routes.js'
+import { fileURLToPath } from 'url';
 
 import fs from 'fs';
 import path from 'path';
-dotenv.config()
-// require('dotenv').config({ path: '.env.production' });
+// dotenv.config()
+dotenv.config({ path: '.env.production' });
 
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
