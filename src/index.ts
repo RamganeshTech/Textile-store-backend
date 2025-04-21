@@ -16,8 +16,8 @@ import { fileURLToPath } from 'url';
 
 import fs from 'fs';
 import path from 'path';
-// dotenv.config()
-dotenv.config({ path: '.env.production' });
+dotenv.config()
+// dotenv.config({ path: '.env.production' });
 
 
 const __filename = fileURLToPath(import.meta.url);
