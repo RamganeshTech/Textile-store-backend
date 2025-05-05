@@ -62,7 +62,7 @@ interface IProduct extends Document {
 // Color Variant Schema (global color -> images)
 const colorVariantSchema = new Schema({
   color: { type: String, required: true },
-  images: { type: [String], required: true },
+  images: { type: [String] },
 });
 
 // Size Variant Schema (each size -> available colors and stock)

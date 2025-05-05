@@ -1,7 +1,7 @@
 import express, { RequestHandler } from "express";
 import { authMiddleware } from "../Middleware/authMiddleware.js";
 import { createProduct, getAllProducts, uploadImage, editProducts,deleteProduct } from "../Controllers/product.controller.js";
-import { upload } from "../Utils/multer.js";
+import { upload } from "../Utils/s3upload.js";
 // import { createProduct } from "../Controllers/product.controller.js";
 // import upload from "../Utils/s3upload.js"; // Path to the S3 upload middleware
 

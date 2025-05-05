@@ -262,7 +262,11 @@ const refreshToken = async (req: Request, res: Response): Promise<void> => {
 
       // Create a new access token using the correct secret and expiration
       const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: "15m" });
-      res.cookie("useraccesstoken", newAccessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
+      res.cookie("useraccesstoken", newAccessToken, { httpOnly: true, 
+        maxAge: 1000 * 60 * 10,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      })
 
       // Return the new access token in the response
       res.status(200).json({

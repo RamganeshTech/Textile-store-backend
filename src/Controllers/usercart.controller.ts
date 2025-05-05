@@ -97,119 +97,120 @@ import { AuthenticatedRequest } from '../Types/types.js';
 
 const addToCart: RequestHandler = async (req: Request, res: Response): Promise<void> => {
     try {
-      const user = (req as AuthenticatedRequest).user;
-      const cartItems = req.body.cartItems;
-  
-      if (!cartItems.productId || !cartItems.quantity || cartItems.quantity < 1) {
-        res.status(400).json({ message: "Invalid product ID or quantity", error: true, ok: false });
-        return;
-      }
-  
-      if (!cartItems.size) {
-        res.status(400).json({ message: "Please select a size", error: true, ok: false });
-        return;
-      }
-  
-      if (!cartItems.color) {
-        res.status(400).json({ message: "Please select a color", error: true, ok: false });
-        return;
-      }
-  
-      const product = await ProductModel.findById(cartItems.productId);
-  
-      if (!product) {
-        res.status(404).json({ message: "Product not found", error: true, ok: false });
-        return;
-      }
-  
-      // Step 1: Find the selected size variant
-      const sizeVariant = product.sizeVariants.find(s => s.size === cartItems.size);
-      if (!sizeVariant) {
-        res.status(400).json({ message: "Selected size not available", error: true, ok: false });
-        return;
-      }
-  
-      // Step 2: Find the color within that size
-      const colorVariant = sizeVariant.colors.find(c => c.color === cartItems.color);
-      if (!colorVariant) {
-        res.status(400).json({ message: "Selected color not available in this size", error: true, ok: false });
-        return;
-      }
-  
-      // Step 3: Check stock
-      if (colorVariant.availableStock < cartItems.quantity) {
-        res.status(400).json({ message: "Not enough stock available", error: true, ok: false });
-        return;
-      }
-  
-      // Get the image for the selected color
-      const imageObj = product.colorVariants.find(c => c.color === cartItems.color);
-      const image = imageObj?.images?.[0] || "";
-  
-      // Step 4: Find or create cart
-      let userCart = await CartModel.findOne({ userId: user._id });
-  
-      if (!userCart) {
-        userCart = await CartModel.create({
-          userId: user._id,
-          items: [{
-            productId: cartItems.productId,
-            quantity: cartItems.quantity,
-            price: cartItems.price,
-            size: cartItems.size,
-            color: cartItems.color,
-            image
-          }]
-        });
-      } else {
-        const existingItem = userCart.items.find(item =>
-          item.productId.toString() === cartItems.productId.toString() &&
-          item.size === cartItems.size &&
-          item.color === cartItems.color
-        );
-  
-        if (existingItem) {
-          const newTotal = existingItem.quantity + cartItems.quantity;
-          if (newTotal > colorVariant.availableStock) {
-            res.status(400).json({ message: "Adding exceeds available stock", error: true, ok: false });
+        const user = (req as AuthenticatedRequest).user;
+        const cartItems = req.body.cartItems;
+
+        if (!cartItems.productId || !cartItems.quantity || cartItems.quantity < 1) {
+            res.status(400).json({ message: "Invalid product ID or quantity", error: true, ok: false });
             return;
-          }
-          existingItem.quantity = newTotal;
-        } else {
-          userCart.items.push({
-            productId: cartItems.productId,
-            quantity: cartItems.quantity,
-            price: cartItems.price,
-            size: cartItems.size,
-            color: cartItems.color,
-            image
-          });
         }
-      }
-  
-      await userCart.save();
-  
-      res.status(200).json({
-        message: "Item added to cart successfully",
-        data: userCart,
-        ok: true
-      });
+
+        if (!cartItems.size) {
+            res.status(400).json({ message: "Please select a size", error: true, ok: false });
+            return;
+        }
+
+        if (!cartItems.color) {
+            res.status(400).json({ message: "Please select a color", error: true, ok: false });
+            return;
+        }
+
+        const product = await ProductModel.findById(cartItems.productId);
+
+        if (!product) {
+            res.status(404).json({ message: "Product not found", error: true, ok: false });
+            return;
+        }
+
+        // Step 1: Find the selected size variant
+        const sizeVariant = product.sizeVariants.find(s => s.size === cartItems.size);
+        if (!sizeVariant) {
+            res.status(400).json({ message: "Selected size not available", error: true, ok: false });
+            return;
+        }
+
+        // Step 2: Find the color within that size
+        const colorVariant = sizeVariant.colors.find(c => c.color === cartItems.color);
+        if (!colorVariant) {
+            res.status(400).json({ message: "Selected color not available in this size", error: true, ok: false });
+            return;
+        }
+
+        // Step 3: Check stock
+        if (colorVariant.availableStock < cartItems.quantity) {
+            res.status(400).json({ message: "Not enough stock available", error: true, ok: false });
+            return;
+        }
+
+        // Get the image for the selected color
+        const imageObj = product.colorVariants.find(c => c.color === cartItems.color);
+        const image = imageObj?.images?.[0] || "";
+
+        // Step 4: Find or create cart
+        let userCart = await CartModel.findOne({ userId: user._id });
+
+        if (!userCart) {
+            userCart = await CartModel.create({
+                userId: user._id,
+                items: [{
+                    productId: cartItems.productId,
+                    quantity: cartItems.quantity,
+                    price: cartItems.price,
+                    size: cartItems.size,
+                    color: cartItems.color,
+                    image
+                }]
+            });
+        } else {
+            const existingItem = userCart.items.find(item =>
+                item.productId.toString() === cartItems.productId.toString() &&
+                item.size === cartItems.size &&
+                item.color === cartItems.color
+            );
+
+            if (existingItem) {
+                const newTotal = existingItem.quantity + cartItems.quantity;
+                if (newTotal > colorVariant.availableStock) {
+                    res.status(400).json({ message: "Adding exceeds available stock", error: true, ok: false });
+                    return;
+                }
+                existingItem.quantity = newTotal;
+            } else {
+                userCart.items.push({
+                    productId: cartItems.productId,
+                    quantity: cartItems.quantity,
+                    price: cartItems.price,
+                    size: cartItems.size,
+                    color: cartItems.color,
+                    image
+                });
+            }
+        }
+
+        await userCart.save();
+
+        res.status(200).json({
+            message: "Item added to cart successfully",
+            data: userCart,
+            ok: true
+        });
     } catch (error) {
-      console.error("AddToCart Error:", error);
-      res.status(500).json({
-        message: "Something went wrong",
-        error: true,
-        ok: false
-      });
+        console.error("AddToCart Error:", error);
+        res.status(500).json({
+            message: "Something went wrong",
+            error: true,
+            ok: false
+        });
     }
-  };
-  
+};
+
 
 const searchProducts = async (req: Request, res: Response) => {
     try {
-        // if (!req.query.search) {
-        //     return res.status(400).json({ message: "Search Box is Empty", error: true, ok: false })
-        // }
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+
+        const skip = (page - 1) * limit;
 
         let productName = req.query.search as string;
 
@@ -281,7 +282,7 @@ const searchProducts = async (req: Request, res: Response) => {
                         }
                     }
 
-                  
+
                     // if (parsedFilter.sizes.length) {
                     //     product.availableSizes = { $in: parsedFilter.sizes }
                     // }
@@ -307,7 +308,7 @@ const searchProducts = async (req: Request, res: Response) => {
                     }
 
                     if (parsedFilter.arrival && parsedFilter.arrival.length) {
-                       if (parsedFilter.arrival.includes("new arrival")) {
+                        if (parsedFilter.arrival.includes("new arrival")) {
                             sort.createdAt = -1; // Newest products first
 
                         } else if (parsedFilter.arrival.includes("old arrival")) {
@@ -320,13 +321,28 @@ const searchProducts = async (req: Request, res: Response) => {
 
         }
 
-        let data = await ProductModel.find(product).sort(sort)
-        
+        // let data = await ProductModel.find(product).sort(sort)
+
+        const total = await ProductModel.countDocuments(product); // total matching products
+        const data = await ProductModel.find(product).sort(sort).skip(skip).limit(limit);
+
+
+        const hasNextPage = page * limit < total;
+
         if (!data.length) {
             return res.status(404).json({ message: "No Products Available", error: true, ok: false })
         }
 
-        return res.status(200).json({ message: "Products Fetched successfully", data, error: false, ok: true })
+        // return res.status(200).json({ message: "Products Fetched successfully", data, error: false, ok: true })
+        // console.log("data",data.length)
+
+        return res.status(200).json({
+            message: "Products Fetched successfully",
+            data,
+            error: false,
+            ok: true,
+            hasNextPage,
+        });
 
     }
     catch (error) {

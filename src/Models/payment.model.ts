@@ -13,7 +13,6 @@ const paymentSchema: Schema<IPayment> = new Schema(
     merchantTransactionId: {
       type: String,
       required: true,
-      unique: true,
     },
     merchantUserId: {
       type: String,

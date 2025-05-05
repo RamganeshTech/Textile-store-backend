@@ -2,6 +2,7 @@ import { Response, Request } from 'express';
 import { IUser, UserModel } from '../Models/user.model.js';
 import { AuthenticatedRequest } from '../Types/types.js';
 import bcrypt  from 'bcrypt';
+import OrderModel from '../Models/orders.model.js';
 
 const changePassword = async (req: Request, res: Response):Promise<void> => {
 try{
@@ -209,9 +210,30 @@ const updateAddress = async (req:Request, res:Response)=>{
   }
 }
 
-// my orders
-// saved items *
-// profile pic
+
+const myOrders = async (req:Request, res:Response)=>{
+  try{
+
+    let user = (req as AuthenticatedRequest).user
+    let isUserExists = await UserModel.findById(user._id);
+
+    if (!isUserExists) {
+       res.status(404).json({ message: "User not found", error: true , ok:false});
+       return;
+    }
+
+    const products = await OrderModel.findOne({userId: isUserExists._id}).populate('products.productId')
+
+    res.status(200).json({ message: "Ordered Products fetched", data:products?.products,  error: false, ok:true });
+  }
+  catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in myorderss API:", error.message);
+      res.status(500).json({ message: error.message, error: true, ok:false });
+    }
+  }
+
+}
 
 export {
     changePassword,
@@ -220,5 +242,6 @@ export {
     updatePhoneNumber,
     updateUserName,
     verifyPassword,
-    updateAddress
+    updateAddress,
+    myOrders
 }

@@ -11,17 +11,19 @@ import favouriteRoute from './Routes/userfavourite.route.js'
 import reviewRoute from './Routes/review.routes.js'
 import profileRoute from './Routes/userprofile.routes.js'
 import adminRoute from './Routes/admin.route.js'
+import offerRoute from './Routes/offerpopup.route.js'
 import paymentRoute from './Routes/paymnet.routes.js'
-import { fileURLToPath } from 'url';
+import orderRoute from './Routes/order.route.js'
+// import { fileURLToPath } from 'url';
 
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 dotenv.config()
 // dotenv.config({ path: '.env.production' });
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 
 
@@ -42,14 +44,16 @@ app.use('/api', favouriteRoute)
 app.use('/api', reviewRoute)
 app.use('/api', profileRoute)
 app.use('/api', adminRoute)
-// app.use('/api', paymentRoute)
+app.use('/api/offers', offerRoute);
+app.use('/api/order', orderRoute);
+app.use('/api', paymentRoute)
 
-const uploadsPath = path.join(__dirname, 'temp_uploads');
+// const uploadsPath = path.join(__dirname, 'temp_uploads');
 
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
-  console.log(`Created folder: ${uploadsPath}`);
-}
+// if (!fs.existsSync(uploadsPath)) {
+//   fs.mkdirSync(uploadsPath, { recursive: true });
+//   console.log(`Created folder: ${uploadsPath}`);
+// }
 
 let PORT = process.env.PORT || 3000
 connectDB().then(()=>{

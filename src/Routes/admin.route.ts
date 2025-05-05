@@ -1,5 +1,5 @@
 import  express, { RequestHandler }  from 'express';
-import { adminLogin, adminLogout, getAllProducts, isAdminAuthenticated } from '../Controllers/adminauth.controller.js';
+import { adminLogin, adminLogout, adminRefreshToken, getAllProducts, isAdminAuthenticated } from '../Controllers/adminauth.controller.js';
 import authAdminMiddleware from '../Middleware/authAdminMiddleware.js';
 
 
@@ -9,5 +9,7 @@ router.post('/admin/adminlogin', adminLogin as RequestHandler)
 router.post('/admin/adminlogout', adminLogout as RequestHandler)
 router.get('/admin/isauthenticated', authAdminMiddleware,  isAdminAuthenticated as RequestHandler)
 router.get('/admin/getproducts', authAdminMiddleware,  getAllProducts as RequestHandler)
+
+router.get('/admin/adminrefreshtoken', adminRefreshToken)
 
 export default router;

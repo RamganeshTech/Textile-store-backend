@@ -1,6 +1,6 @@
 import { Response, Request } from "express";
 import AdminModel from "../Models/admin.model.js";
-import jwt from "jsonwebtoken";
+import jwt, { VerifyErrors } from "jsonwebtoken";
 import bcrypt from 'bcrypt';
 import { AuthenticateAdminRequest, AuthenticatedRequest } from "../Types/types.js";
 import ProductModel from "../Models/products.model.js";
@@ -51,7 +51,8 @@ const adminLogin = async (req: Request, res: Response) => {
             });
         }
 
-        let adminaccesstoken = jwt.sign({ _id: isExisting._id }, process.env.JWT_ADMIN_SECRET as string, { expiresIn: "1d" })
+        let adminaccesstoken = jwt.sign({ _id: isExisting._id, email: isExisting.email }, process.env.JWT_ADMIN_SECRET as string, { expiresIn: "15m" })
+        let adminrefreshtoken = jwt.sign({_id: isExisting._id, email: isExisting.email}, process.env.JWT_ADMIN_REFRESH_SECRET as string, { expiresIn: "7d" })
 
         res.cookie("adminaccesstoken", adminaccesstoken, {
             httpOnly: true,
@@ -60,6 +61,13 @@ const adminLogin = async (req: Request, res: Response) => {
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
         })
+
+        res.cookie("adminrefreshtoken", adminrefreshtoken, {
+            maxAge: 1000*60*60*24*7,
+            secure: process.env.NODE_ENV==="production",
+            httpOnly:true,
+            sameSite: process.env.NODE_ENV==="production" ? "none" : "lax"
+        } )
 
 
         res.status(200).json({ message: "admin loggin successfull", isAuthenticated: true, email: isExisting.email, ok: true, error: false })
@@ -86,6 +94,13 @@ const adminLogout = async (req: Request, res: Response) => {
         // } 
 
         res.clearCookie("adminaccesstoken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // Only secure in production
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        });
+
+
+        res.clearCookie("adminrefreshtoken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production", // Only secure in production
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -127,6 +142,51 @@ const isAdminAuthenticated = async (req: Request, res: Response) => {
 
 }
 
+const adminRefreshToken = async (req:Request, res:Response)=>{
+    try{
+        let refreshtoken =  req.cookies?.adminrefreshtoken
+
+        if(!refreshtoken){
+            res.status(401).json({message:"UnAuthorized: no refresh token provided please login", ok:false, error:true})
+            return;
+        }
+
+        jwt.verify(refreshtoken, process.env.JWT_ADMIN_REFRESH_SECRET as string, (err:VerifyErrors|null, decoded:unknown)=>{
+        if(err || !decoded){
+            res.status(403).json({ message: "Invalid or expired refresh token", error: true, ok: false });
+            return;
+        }
+
+        let adminaccesstoken = jwt.sign({_id: (decoded as any)._id, email: (decoded as any).email}, process.env.JWT_ADMIN_SECRET as string, {expiresIn: "15m"} )
+
+        res.cookie("adminaccesstoken",adminaccesstoken, {
+            maxAge: 1000*60*15,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        })
+
+        res.status(200).json({
+            message: "Access token created successfully",
+            accessToken: adminaccesstoken,
+            ok: true,
+            error: false,
+            adminId:(decoded as any)._id,
+            email: (decoded as any).email
+          });
+          return;
+
+       })
+
+
+    }
+    catch(error){
+        if(error instanceof Error){
+            res.status(500).json({message:error.message, error:true, ok:false, adminId: null, email:null})
+        }
+    }
+}
+
 const getAllProducts = async (req: Request, res: Response) => {
     try {
         const products = await ProductModel.find(); // Fetch all products
@@ -146,4 +206,4 @@ const getAllProducts = async (req: Request, res: Response) => {
     }
 };
 
-export { adminLogin, adminLogout, isAdminAuthenticated, getAllProducts }
+export { adminLogin, adminLogout, isAdminAuthenticated, getAllProducts , adminRefreshToken}

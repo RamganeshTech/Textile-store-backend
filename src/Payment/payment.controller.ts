@@ -2,7 +2,7 @@ import axios from 'axios';
 import { RequestHandler, Response, Request } from 'express';
 import uniqid from 'uniqid';
 import sha256 from 'sha256'
-import OrderModel from '../Models/orders.model.js';
+// import OrderModel from '../Models/orders.model.js';
 import { AuthenticatedRequest } from '../Types/types.js';
 import PaymentModel from '../Models/payment.model.js';
 
@@ -167,43 +167,33 @@ const redirectUrl = async (req: Request, res: Response): Promise<void> => {
 }
 
 
-const orders = async (req: Request, res: Response) => {
-    try {
+// const orders = async (req: Request, res: Response) => {
+//     try {
 
-        let user = (req as AuthenticatedRequest).user
-        const { color, size, productId, quantity } = req.body
+//         let user = (req as AuthenticatedRequest).user
+//         const { color, size, productId, quantity } = req.body
 
-        if (!color || !size || !productId || !user._id || !quantity) {
-            return res.status(400).json({ message: "neccessary details are missing", error: true, ok: false, })
-        }
+//         if (!color || !size || !productId || !user._id || !quantity) {
+//             return res.status(400).json({ message: "neccessary details are missing", error: true, ok: false, })
+//         }
 
-        let data = OrderModel.create({
-            color, size, productId, userId: user._id, quantity
-        })
+//         let data = OrderModel.create({
+//             color, size, productId, userId: user._id, quantity
+//         })
 
-        res.status(201).json({ message: "created product", error: false, ok: true, data })
-    }
-    catch (error) {
-        if (error instanceof Error) {
-            console.log(error.message)
-            res.status(500).json({ message: error.message, error: false, ok: true })
-        }
-    }
-}
+//         res.status(201).json({ message: "created product", error: false, ok: true, data })
+//     }
+//     catch (error) {
+//         if (error instanceof Error) {
+//             console.log(error.message)
+//             res.status(500).json({ message: error.message, error: false, ok: true })
+//         }
+//     }
+// }
 
 
 export {
     paymentAPi,
     redirectUrl,
-    orders
+    // orders
 }
-
-
-
-//     merchantId: "YOUR_MERCHANT_ID",
-// transactionId: "ORDER_12345",
-// amount: 10000, // In paise (₹100 = 10000 paise)
-// redirectUrl: "https://yourwebsite.com/payment-success",
-// callbackUrl: "https://yourserver.com/verify-payment",
-// paymentInstrument: { type: "UPI_INTENT" }
-// 
