@@ -18,6 +18,7 @@ interface IProductItem {
     quantity: number;
     size?: string;
     color?: string;
+    orderStatus:string;
 }
 
 interface IPaymentInfo {
@@ -46,6 +47,12 @@ const orderSchema: Schema = new Schema<IOrder>({
             quantity: { type: Number, required: true },
             size: {type: String},
             color: {type:String},
+            orderStatus: {
+                type: String,
+                enum: ["processing", "shipped", "delivered", "cancelled"],
+                default: "processing",
+            },
+        
         },
     ],
 
@@ -73,11 +80,11 @@ const orderSchema: Schema = new Schema<IOrder>({
         },
     },
 
-    orderStatus: {
-        type: String,
-        enum: ["processing", "shipped", "delivered", "cancelled"],
-        default: "processing",
-    },
+    // orderStatus: {
+    //     type: String,
+    //     enum: ["processing", "shipped", "delivered", "cancelled"],
+    //     default: "processing",
+    // },
 
     placedAt: {
         type: Date,

@@ -2,18 +2,18 @@ import { Request, Response } from "express";
 import OrderModel from "../Models/orders.model.js";
 import { AuthenticateAdminRequest } from "../Types/types.js";
 
-const sendInfo = {userID:1, shippingAddress:1, product: 1, totalAmount:1, orderStatus:1, placedAt:1, "paymentInfo.orderId":1, "paymentInfo.paymentId":1, "paymentInfo.status":1}
+const sendInfo = {userID:1, shippingAddress:1, products: 1, totalAmount:1, orderStatus:1, placedAt:1, "paymentInfo.orderId":1, "paymentInfo.paymentId":1, "paymentInfo.status":1}
 
 const getOrders = async (req: Request, res: Response): Promise<void> =>{
     try{
         // let admin = (req as AuthenticateAdminRequest).admin
 
-            const orders = await OrderModel.find({orderStatus:{ $ne:"cancelled"}}, sendInfo)
+            const orders = await OrderModel.find({products: { $elemMatch: { orderStatus: { $ne: "cancelled" } } } }, sendInfo)
             .populate("products.productId", "productName"); // Fetch all order
 
             // .populate({
                 // path: "product.productId",
-                // select: "productName"
+                // select: "productName"a
             //   });
 
         if (orders.length === 0) {
@@ -21,15 +21,19 @@ const getOrders = async (req: Request, res: Response): Promise<void> =>{
            return
         }
 
-        const flattenedOrders = orders.flatMap(order =>
-            order.products.map(product => ({
+        const flattenedOrders = orders.flatMap(order =>{
+            // console.log("order.products",order.products)
+           return  order.products
+            .filter(ele=> ele.orderStatus !== "cancelled")
+            .map(product => ({
+              _id: (product as any)._id,
               userId: order.userId,
-              orderStatus: order.orderStatus,
               placedAt: order.placedAt,
               paymentInfo: order.paymentInfo,
               shippingAddress: order.shippingAddress,
               products: product, // already populated
             }))
+        }
           );
     
          res.status(200).json({ message: "order retrieved successfully", data: flattenedOrders, ok: true, error: false });
@@ -48,13 +52,13 @@ const getOrders = async (req: Request, res: Response): Promise<void> =>{
 const updateShippingStatus = async (req: Request, res: Response):Promise<void> =>{
     try{
         let {orderId} = req.params
-        let {orderStatus} = req.body
+        let {orderStatus, productId} = req.body
 
         // const order = await OrderModel.findOneAndUpdate({"paymentInfo.orderId": orderId}, {orderStatus}, {projection:sendInfo, returnDocument:"after"}); // Fetch all order
 
        const order =  await OrderModel.findOneAndUpdate(
-            { "paymentInfo.orderId": orderId },
-            { orderStatus },
+            { "paymentInfo.orderId": orderId , "products._id":productId},
+            {  $set: { "products.$.orderStatus": orderStatus }  },
             { new: true }
           ).select(sendInfo)
 

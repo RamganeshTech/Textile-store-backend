@@ -43,7 +43,7 @@ const razorpayPayment = async (req: Request, res: Response) => {
         // signature: '',
         status: 'pending'
       },
-      orderStatus: 'processing'
+      // orderStatus: 'processing'
     });
     await maunalOrder.save();
 
@@ -84,10 +84,12 @@ const verifyPayment = async (req: Request, res: Response): Promise<void> => {
       await OrderModel.findOneAndUpdate(
         { 'paymentInfo.orderId': razorpay_order_id },
         {
-          'paymentInfo.status': 'paid',
-          'paymentInfo.paymentId': razorpay_payment_id,
-          'paymentInfo.signature': razorpay_signature,
-          orderStatus: 'processing'
+          $set: {
+            'paymentInfo.status': 'paid',
+            'paymentInfo.paymentId': razorpay_payment_id,
+            'paymentInfo.signature': razorpay_signature,
+            'products.$[].orderStatus': 'processing' // this sets orderStatus for all products in the array
+          }
         }
       );
 
@@ -128,8 +130,10 @@ const paymentFailure = async (req: Request, res: Response): Promise<void>=> {
     const updatedOrder = await OrderModel.findOneAndUpdate(
       { 'paymentInfo.orderId': razorpay_order_id },
       {
-        'paymentInfo.status': 'failed',
-        orderStatus: 'cancelled',
+        $set: {
+          'paymentInfo.status': 'failed',
+          'products.$[].orderStatus': 'cancelled',
+        }
       },
       { returnDocument: "after" }
     );
