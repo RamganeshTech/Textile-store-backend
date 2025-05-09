@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npx tsc --watch\" \"node --watch dist/index.js\"",
-    "build": "node --max-old-space-size=4096 node_modules/.bin/tsc",
+    "build": "tsc",
     "start": "node dist/index.js"
   },
   "keywords": [],
