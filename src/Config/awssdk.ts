@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
 
-dotenv.config(); 
+dotenv.config({ path: '.env.production' });
 // Load from environment variables with fallback types
 const accessKeyId: string = process.env.AWS_ACCESS_KEY_ID!;
 const secretAccessKey: string = process.env.AWS_SECRET_ACCESS_KEY!;
